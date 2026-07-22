@@ -1,0 +1,27 @@
+rules_version = '2';
+
+// Default-deny: every path not explicitly matched below is inaccessible from
+// client SDKs. The backend uses the Firebase Admin SDK, which bypasses these
+// rules entirely, so this file only governs the (currently unused-by-design)
+// direct-client Firestore access path. It exists as defense-in-depth per the
+// project constitution's Security & Data Privacy principle: access is scoped
+// to the owning user (request.auth.uid) and nothing else.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /users/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+
+      match /plans/{planId} {
+        allow read, delete: if request.auth != null && request.auth.uid == uid;
+        // Clients never create/update plan documents directly (the backend,
+        // via the Admin SDK, is the only writer per FR-014 / FR-016 / FR-017);
+        // this rule intentionally has no client-side create/update branch.
+      }
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
