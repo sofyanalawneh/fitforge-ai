@@ -12,6 +12,7 @@ import os
 from uagents import Agent, Context
 
 from src.shared.models import (
+    HealthResponse,
     WorkoutDay,
     WorkoutExercise,
     WorkoutGenerateRequest,
@@ -79,6 +80,11 @@ def _build_plan(fitness_goal: str, activity_level: str, workout_experience: str)
     )
 
     return WorkoutPlanContent(summary=summary, weekly_schedule=weekly_schedule)
+
+
+@agent.on_rest_get("/health", HealthResponse)
+async def handle_health(ctx: Context) -> HealthResponse:
+    return HealthResponse(status="ok")
 
 
 @agent.on_rest_post("/workout/generate", WorkoutGenerateRequest, WorkoutGenerateResponse)

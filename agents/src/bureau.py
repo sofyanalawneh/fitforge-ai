@@ -4,7 +4,9 @@ Run with: python -m src.bureau (from the agents/ directory)
 
 A uagents Bureau serves all of its member agents from ONE shared HTTP server/port
 (it overwrites each agent's own endpoint), so the two agents are disambiguated by
-REST path instead of by port: /workout/generate and /meal/generate on BUREAU_PORT.
+REST path instead of by port: /workout/generate, /meal/generate, and /health on
+BUREAU_PORT. Render (and most PaaS providers) inject the port to bind as $PORT,
+so that takes precedence over BUREAU_PORT when both are set.
 """
 
 import os
@@ -14,7 +16,7 @@ from uagents import Bureau
 from src.meal_agent import agent as meal_agent
 from src.workout_agent import agent as workout_agent
 
-BUREAU_PORT = int(os.environ.get("BUREAU_PORT", "8000"))
+BUREAU_PORT = int(os.environ.get("PORT", os.environ.get("BUREAU_PORT", "8000")))
 
 bureau = Bureau(port=BUREAU_PORT)
 bureau.add(workout_agent)

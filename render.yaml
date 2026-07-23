@@ -1,0 +1,40 @@
+services:
+  - type: web
+    name: fitforge-backend
+    runtime: node
+    plan: free
+    rootDir: backend
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: CORS_ORIGIN
+        sync: false
+      - key: FIREBASE_PROJECT_ID
+        sync: false
+      - key: FIREBASE_CLIENT_EMAIL
+        sync: false
+      - key: FIREBASE_PRIVATE_KEY
+        sync: false
+      - key: WORKOUT_AGENT_URL
+        sync: false
+      - key: MEAL_AGENT_URL
+        sync: false
+      - key: AGENT_REQUEST_TIMEOUT_MS
+        value: 30000
+      - key: USE_FIREBASE_EMULATOR
+        value: "false"
+
+  - type: web
+    name: fitforge-agents
+    runtime: python
+    plan: free
+    rootDir: agents
+    buildCommand: pip install -r requirements.txt
+    startCommand: python -m src.bureau
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9

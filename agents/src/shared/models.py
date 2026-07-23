@@ -67,3 +67,7 @@ class MealPlanContent(BaseModel):
 class MealGenerateResponse(BaseModel):
     request_id: str
     content: MealPlanContent
+
+
+class HealthResponse(BaseModel):
+    status: str
