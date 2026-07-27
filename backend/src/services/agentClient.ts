@@ -60,6 +60,8 @@ interface WorkoutAgentResponse {
   content: {
     summary: string;
     weekly_schedule: WorkoutPlanContent["weeklySchedule"];
+    difficulty?: WorkoutExperience;
+    progression_guidance?: string;
   };
 }
 
@@ -94,6 +96,8 @@ export async function generateWorkoutPlan(
   return {
     summary: response.content.summary,
     weeklySchedule: response.content.weekly_schedule,
+    difficulty: response.content.difficulty,
+    progressionGuidance: response.content.progression_guidance,
   };
 }
 

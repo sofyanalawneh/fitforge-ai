@@ -680,12 +680,31 @@ a {
   justify-content: space-between;
   gap: 0.25rem 0.75rem;
   padding: 0.4rem 0;
+  border: none;
   border-bottom: 1px dashed var(--ff-border);
+  border-radius: var(--ff-radius-sm);
   font-size: 0.92rem;
+  width: 100%;
+  background: none;
+  appearance: none;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background-color 0.15s ease;
 }
 
 .plan-exercise-row:last-child {
   border-bottom: none;
+}
+
+.plan-exercise-row:hover,
+.plan-exercise-row:focus-visible,
+.plan-exercise-row.is-selected {
+  background-color: var(--ff-workout-soft);
+}
+
+.plan-exercise-row.is-selected .exercise-name {
+  color: var(--ff-workout);
 }
 
 .plan-exercise-row .exercise-name {
@@ -698,16 +717,30 @@ a {
 }
 
 .meal-entry {
+  display: block;
   border: 1px solid var(--ff-border);
   border-left: 4px solid var(--ff-meal);
   border-radius: var(--ff-radius-md);
   padding: 1rem 1.15rem;
   margin-bottom: 0.85rem;
   background-color: #fbfbfd;
+  width: 100%;
+  appearance: none;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
 .meal-entry:last-child {
   margin-bottom: 0;
+}
+
+.meal-entry:hover,
+.meal-entry:focus-visible,
+.meal-entry.is-selected {
+  border-color: var(--ff-meal);
+  background-color: var(--ff-meal-soft);
 }
 
 .meal-entry .meal-label {
@@ -731,6 +764,46 @@ a {
 .plan-summary-banner p {
   margin-bottom: 0;
   color: rgba(255, 255, 255, 0.9);
+}
+
+/* ---------- Plan images ---------- */
+
+.ff-image {
+  background-color: var(--ff-border);
+  overflow: hidden;
+}
+
+.ff-image img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.ff-image-cover {
+  aspect-ratio: 16 / 9;
+  border-radius: var(--ff-radius-lg);
+  margin-bottom: 1.25rem;
+}
+
+.ff-image-card {
+  aspect-ratio: 16 / 8;
+  border-radius: var(--ff-radius-md);
+  margin-bottom: 0.85rem;
+}
+
+.ff-image-thumb {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--ff-radius-sm);
+  flex-shrink: 0;
+}
+
+@media (max-width: 576px) {
+  .ff-image-thumb {
+    width: 36px;
+    height: 36px;
+  }
 }
 
 /* ---------- App shell / footer ---------- */
@@ -1004,6 +1077,11 @@ a {
 
 .form-section {
   padding: 1.5rem;
+  transition: background-color 0.2s ease;
+}
+
+.form-section:hover {
+  background-color: #fbfbfd;
 }
 
 @media (min-width: 768px) {

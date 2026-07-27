@@ -2,8 +2,10 @@ import { useState } from "react";
 import { ApiError, apiClient } from "../services/apiClient";
 import type { MealPlanContent } from "../types";
 import { LoadingState } from "../components/LoadingState";
+import { PlanImage } from "../components/PlanImage";
 import { StatusAlert } from "../components/StatusAlert";
 import { IconSalad } from "../components/icons";
+import { MEAL_PLACEHOLDER, getMealImage } from "../utils/planImages";
 
 type Status = "idle" | "loading" | "error" | "profile_incomplete" | "ready" | "saved";
 
@@ -80,6 +82,13 @@ export function GenerateMeal() {
       {plan && (status === "ready" || status === "saved") && (
         <div className="card-ff mt-3 ff-animate-in">
           <div className="card-ff-body">
+            <PlanImage
+              src={getMealImage(plan.dailyMeals[0])}
+              alt="Meal plan cover"
+              variant="cover"
+              fallbackSrc={MEAL_PLACEHOLDER}
+              priority
+            />
             <div className="plan-summary-banner">
               <p>{plan.summary}</p>
             </div>
@@ -89,9 +98,19 @@ export function GenerateMeal() {
                 className="meal-entry ff-animate-in"
                 style={{ animationDelay: `${index * 60}ms` }}
               >
-                <span className="meal-label">{meal.meal}</span>
-                {meal.description}
-                {meal.notes && <div className="text-muted small mt-1">{meal.notes}</div>}
+                <div className="d-flex align-items-start gap-2">
+                  <PlanImage
+                    src={getMealImage(meal)}
+                    alt={meal.meal}
+                    variant="thumb"
+                    fallbackSrc={MEAL_PLACEHOLDER}
+                  />
+                  <div>
+                    <span className="meal-label">{meal.meal}</span>
+                    {meal.description}
+                    {meal.notes && <div className="text-muted small mt-1">{meal.notes}</div>}
+                  </div>
+                </div>
               </div>
             ))}
             {status === "ready" && (

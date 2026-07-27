@@ -3,11 +3,31 @@ import { Link } from "react-router-dom";
 import { apiClient } from "../services/apiClient";
 import type { Plan } from "../types";
 import { LoadingState } from "../components/LoadingState";
+import { PlanImage } from "../components/PlanImage";
 import { StatusAlert } from "../components/StatusAlert";
 import { EmptyState } from "../components/EmptyState";
 import { PlanTypeBadge } from "../components/PlanTypeBadge";
 import { IconDumbbell, IconLayoutGrid, IconSalad, IconTrash } from "../components/icons";
 import { formatDateTime } from "../utils/format";
+import { MEAL_PLACEHOLDER, WORKOUT_PLACEHOLDER, getPlanCoverCandidates } from "../utils/planImages";
+
+/** Walks the plan list in order and, for each plan, picks the first cover
+ * candidate not already used by an earlier card — falling back to that
+ * plan's top-preferred candidate if every candidate collides. Deterministic
+ * given a stable plan list order (GET /api/plans sorts most-recent-first),
+ * so covers stay stable across refreshes while still "attempting" distinct
+ * covers when two plans share the same candidate images. */
+function assignDistinctCovers(plans: Plan[]): Map<string, string> {
+  const used = new Set<string>();
+  const covers = new Map<string, string>();
+  for (const plan of plans) {
+    const candidates = getPlanCoverCandidates(plan);
+    const pick = candidates.find((src) => !used.has(src)) ?? candidates[0];
+    covers.set(plan.planId, pick);
+    used.add(pick);
+  }
+  return covers;
+}
 
 export function Dashboard() {
   const [plans, setPlans] = useState<Plan[] | null>(null);
@@ -90,7 +110,9 @@ export function Dashboard() {
           </div>
 
           <div className="row row-cols-1 row-cols-md-2 g-3">
-            {plans.map((plan, index) => (
+            {(() => {
+              const covers = assignDistinctCovers(plans);
+              return plans.map((plan, index) => (
               <div
                 className="col ff-animate-in"
                 style={{ animationDelay: `${index * 50}ms` }}
@@ -102,6 +124,12 @@ export function Dashboard() {
                   }`}
                 >
                   <div className="card-ff-body d-flex flex-column">
+                    <PlanImage
+                      src={covers.get(plan.planId) ?? WORKOUT_PLACEHOLDER}
+                      alt={`${plan.type === "workout" ? "Workout" : "Meal"} plan thumbnail`}
+                      variant="card"
+                      fallbackSrc={plan.type === "meal" ? MEAL_PLACEHOLDER : undefined}
+                    />
                     <div className="d-flex justify-content-between align-items-start mb-2">
                       <PlanTypeBadge type={plan.type} />
                       <button
@@ -119,7 +147,8 @@ export function Dashboard() {
                   </div>
                 </div>
               </div>
-            ))}
+              ));
+            })()}
           </div>
         </>
       )}

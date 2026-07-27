@@ -3,10 +3,12 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { apiClient } from "../services/apiClient";
 import type { MealPlanContent, Plan, WorkoutPlanContent } from "../types";
 import { LoadingState } from "../components/LoadingState";
+import { PlanImage } from "../components/PlanImage";
 import { StatusAlert } from "../components/StatusAlert";
 import { PlanTypeBadge } from "../components/PlanTypeBadge";
 import { IconChevronLeft, IconTrash } from "../components/icons";
 import { formatDateTime } from "../utils/format";
+import { MEAL_PLACEHOLDER, getExerciseImage, getMealImage, getWorkoutCoverImage } from "../utils/planImages";
 
 export function PlanDetail() {
   const { planId } = useParams<{ planId: string }>();
@@ -81,28 +83,73 @@ export function PlanDetail() {
 }
 
 function WorkoutDetail({ content }: { content: WorkoutPlanContent }) {
+  const [selected, setSelected] = useState({ dayIndex: 0, exerciseIndex: 0 });
+  const selectedDay = content.weeklySchedule[selected.dayIndex];
+  const selectedExercise = selectedDay?.exercises[selected.exerciseIndex];
+
   return (
     <>
+      <PlanImage
+        src={
+          selectedExercise
+            ? getExerciseImage(selectedExercise.name)
+            : getWorkoutCoverImage(content.summary)
+        }
+        alt={selectedExercise?.name ?? "Workout plan cover"}
+        variant="cover"
+        priority
+      />
+      {selectedExercise && selectedDay && (
+        <div className="mb-3">
+          <span className="exercise-name">{selectedExercise.name}</span>
+          <span className="text-muted small ms-2">
+            {selectedDay.day} · {selectedDay.focus}
+          </span>
+          <div className="exercise-volume mt-1">
+            {selectedExercise.sets} {selectedExercise.sets === 1 ? "set" : "sets"} × {selectedExercise.reps}
+            {selectedExercise.rest && ` · ${selectedExercise.rest} rest`}
+          </div>
+          {selectedExercise.notes && (
+            <div className="text-muted small mt-1">{selectedExercise.notes}</div>
+          )}
+        </div>
+      )}
       <div className="plan-summary-banner">
         <p>{content.summary}</p>
+        {content.progressionGuidance && (
+          <p className="text-muted small mb-0">{content.progressionGuidance}</p>
+        )}
       </div>
-      {content.weeklySchedule.map((day, index) => (
+      {content.weeklySchedule.map((day, dayIndex) => (
         <div
           key={day.day}
           className="plan-day-card ff-animate-in"
-          style={{ animationDelay: `${index * 60}ms` }}
+          style={{ animationDelay: `${dayIndex * 60}ms` }}
         >
           <h5>
             {day.day} — {day.focus}
           </h5>
-          {day.exercises.map((exercise) => (
-            <div key={exercise.name} className="plan-exercise-row">
-              <span className="exercise-name">{exercise.name}</span>
-              <span className="exercise-volume">
-                {exercise.sets} sets × {exercise.reps} reps
-              </span>
-            </div>
-          ))}
+          {day.exercises.map((exercise, exerciseIndex) => {
+            const isSelected = dayIndex === selected.dayIndex && exerciseIndex === selected.exerciseIndex;
+            return (
+              <button
+                type="button"
+                key={exercise.name + exerciseIndex}
+                className={`plan-exercise-row${isSelected ? " is-selected" : ""}`}
+                aria-pressed={isSelected}
+                onClick={() => setSelected({ dayIndex, exerciseIndex })}
+              >
+                <div className="d-flex align-items-center gap-2">
+                  <PlanImage src={getExerciseImage(exercise.name)} alt={exercise.name} variant="thumb" />
+                  <span className="exercise-name">{exercise.name}</span>
+                </div>
+                <span className="exercise-volume">
+                  {exercise.sets} {exercise.sets === 1 ? "set" : "sets"} × {exercise.reps}
+                  {exercise.rest && ` · ${exercise.rest} rest`}
+                </span>
+              </button>
+            );
+          })}
         </div>
       ))}
     </>
@@ -110,21 +157,46 @@ function WorkoutDetail({ content }: { content: WorkoutPlanContent }) {
 }
 
 function MealDetail({ content }: { content: MealPlanContent }) {
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const selectedMeal = content.dailyMeals[selectedIndex];
+
   return (
     <>
+      <PlanImage
+        src={getMealImage(selectedMeal ?? content.dailyMeals[0])}
+        alt={selectedMeal?.meal ?? "Meal plan cover"}
+        variant="cover"
+        fallbackSrc={MEAL_PLACEHOLDER}
+        priority
+      />
+      {selectedMeal && (
+        <div className="mb-3">
+          <span className="meal-label">{selectedMeal.meal}</span>
+          <div>{selectedMeal.description}</div>
+          {selectedMeal.notes && <div className="text-muted small mt-1">{selectedMeal.notes}</div>}
+        </div>
+      )}
       <div className="plan-summary-banner">
         <p>{content.summary}</p>
       </div>
       {content.dailyMeals.map((meal, index) => (
-        <div
-          key={meal.meal}
-          className="meal-entry ff-animate-in"
+        <button
+          type="button"
+          key={`${meal.meal}-${index}`}
+          className={`meal-entry ff-animate-in${index === selectedIndex ? " is-selected" : ""}`}
           style={{ animationDelay: `${index * 60}ms` }}
+          aria-pressed={index === selectedIndex}
+          onClick={() => setSelectedIndex(index)}
         >
-          <span className="meal-label">{meal.meal}</span>
-          {meal.description}
-          {meal.notes && <div className="text-muted small mt-1">{meal.notes}</div>}
-        </div>
+          <div className="d-flex align-items-start gap-2">
+            <PlanImage src={getMealImage(meal)} alt={meal.meal} variant="thumb" fallbackSrc={MEAL_PLACEHOLDER} />
+            <div>
+              <span className="meal-label">{meal.meal}</span>
+              {meal.description}
+              {meal.notes && <div className="text-muted small mt-1">{meal.notes}</div>}
+            </div>
+          </div>
+        </button>
       ))}
     </>
   );

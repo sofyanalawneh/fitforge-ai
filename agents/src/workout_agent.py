@@ -27,59 +27,304 @@ PORT = int(os.environ.get("WORKOUT_AGENT_PORT", "8001"))
 
 agent = Agent(name="workout_agent", port=PORT, endpoint=[f"http://127.0.0.1:{PORT}/submit"])
 
-# (experience, goal) -> per-exercise volume, kept simple and explicit for the MVP.
-_VOLUME_BY_EXPERIENCE = {
-    "beginner": {"sets": 3, "reps": "10-12"},
-    "intermediate": {"sets": 4, "reps": "8-10"},
-    "advanced": {"sets": 5, "reps": "6-8"},
+# Difficulty level -> weekly structure (days trained, exercises per session).
+# Days are spaced to leave recovery between sessions at lower levels;
+# advanced trains 5 days in a row. Per-exercise volume/rest/progression is
+# handled separately by _ROLE_PROGRAMMING below, keyed by each exercise's
+# role rather than a single value applied to the whole plan.
+_LEVEL_CONFIG = {
+    "beginner": {"days": ["Monday", "Wednesday", "Friday"], "exercises_per_day": 4},
+    "intermediate": {"days": ["Monday", "Tuesday", "Thursday", "Friday"], "exercises_per_day": 5},
+    "advanced": {"days": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"], "exercises_per_day": 6},
 }
 
-_SPLIT_BY_GOAL = {
-    "lose_weight": [
-        ("Monday", "Full Body + Cardio", ["Goblet Squat", "Push-Up", "Kettlebell Swing", "Plank"]),
-        ("Wednesday", "Full Body + Cardio", ["Deadlift", "Row", "Mountain Climbers", "Bicycle Crunch"]),
-        ("Friday", "Full Body + Cardio", ["Lunges", "Bench Press", "Jump Rope", "Side Plank"]),
-    ],
+_OVERALL_PROGRESSION_NOTE = {
+    "beginner": (
+        "Prioritize consistent form over load — most progression below is about "
+        "technique and control before adding weight."
+    ),
+    "intermediate": (
+        "Most sessions should show a small step forward — each exercise's own note "
+        "below explains what to push next."
+    ),
+    "advanced": (
+        "Volume is high and some sets approach failure — schedule a deload every "
+        "4-6 weeks and use each exercise's specific progression cue below."
+    ),
+}
+
+# Exercise role -> sets/reps/rest/progression by difficulty. This replaces a
+# single plan-wide (sets, reps, rest) triple: a heavy compound, an isolation
+# move, and a core hold should never be programmed identically.
+_ROLE_PROGRAMMING = {
+    "primary": {
+        "beginner": {"sets": 3, "reps": "8-10 reps", "rest": "90-120 sec"},
+        "intermediate": {"sets": 4, "reps": "6-8 reps", "rest": "120-150 sec"},
+        "advanced": {"sets": 5, "reps": "4-6 reps", "rest": "150-180 sec"},
+        "progression": "Add load once every set hits the top of the rep range with solid form.",
+    },
+    "secondary": {
+        "beginner": {"sets": 3, "reps": "10-12 reps", "rest": "75-90 sec"},
+        "intermediate": {"sets": 4, "reps": "8-10 reps", "rest": "90-120 sec"},
+        "advanced": {"sets": 4, "reps": "6-10 reps", "rest": "120-150 sec"},
+        "progression": "Add a rep or a small load increase most sessions; deload if two sessions in a row stall.",
+    },
+    "accessory": {
+        "beginner": {"sets": 3, "reps": "12-15 reps", "rest": "60-75 sec"},
+        "intermediate": {"sets": 3, "reps": "10-15 reps", "rest": "60-90 sec"},
+        "advanced": {"sets": 4, "reps": "10-15 reps", "rest": "75-90 sec"},
+        "progression": "Add reps first, then load, once the movement feels fully controlled.",
+    },
+    "isolation": {
+        "beginner": {"sets": 2, "reps": "12-15 reps", "rest": "45-60 sec"},
+        "intermediate": {"sets": 3, "reps": "12-15 reps", "rest": "45-75 sec"},
+        "advanced": {"sets": 4, "reps": "12-20 reps", "rest": "45-75 sec"},
+        "progression": "Add reps, then try a slower eccentric (3-4 sec lowering), before adding load.",
+    },
+    "core": {
+        "beginner": {"sets": 2, "reps": "12-15 reps", "rest": "30-45 sec"},
+        "intermediate": {"sets": 3, "reps": "15-20 reps", "rest": "30-45 sec"},
+        "advanced": {"sets": 3, "reps": "20-25 reps", "rest": "30-45 sec"},
+        "progression": "Increase reps or hold time before adding resistance; slow the tempo once it feels easy.",
+    },
+    "finisher": {
+        "beginner": {"sets": 2, "reps": "20 sec work / 40 sec rest", "rest": "60 sec"},
+        "intermediate": {"sets": 1, "reps": "AMRAP in 8 min", "rest": "60 sec"},
+        "advanced": {"sets": 1, "reps": "EMOM for 10 min", "rest": "60 sec"},
+        "progression": "Add a round, increase reps per round, or shorten the transition between movements.",
+    },
+}
+
+# Static holds get a time-based rep target instead of a rep count.
+_HOLD_EXERCISES = {"Plank", "Side Plank", "Wall Sit"}
+_HOLD_TIME_BY_DIFFICULTY = {
+    "beginner": "20-30 sec hold",
+    "intermediate": "30-45 sec hold",
+    "advanced": "45-60 sec hold",
+}
+
+# Goal -> ordered day templates. Each exercise is tagged with its role so
+# programming (sets/reps/rest/progression) comes from _ROLE_PROGRAMMING
+# rather than a flat per-level value, and exercises within a day are ordered
+# primary -> secondary -> accessory -> isolation -> core/finisher, mirroring
+# how a coach would actually sequence a session. Five templates per goal
+# covers the highest days-per-week (advanced); beginner/intermediate take the
+# first 4/5 of each 6-exercise day, so the most essential lifts come first.
+_EXERCISE_POOL_BY_GOAL = {
     "build_muscle": [
-        ("Monday", "Upper Body", ["Bench Press", "Bent-Over Row", "Overhead Press", "Bicep Curl"]),
-        ("Wednesday", "Lower Body", ["Back Squat", "Romanian Deadlift", "Leg Press", "Calf Raise"]),
-        ("Friday", "Upper Body", ["Incline Dumbbell Press", "Pull-Up", "Lateral Raise", "Tricep Extension"]),
+        ("Upper Body (Push Focus)", [
+            ("Bench Press", "primary"),
+            ("Overhead Press", "secondary"),
+            ("Bent-Over Row", "accessory"),
+            ("Incline Dumbbell Press", "accessory"),
+            ("Lateral Raise", "isolation"),
+            ("Tricep Extension", "isolation"),
+        ]),
+        ("Lower Body (Squat Focus)", [
+            ("Squat", "primary"),
+            ("Romanian Deadlift", "secondary"),
+            ("Walking Lunge", "accessory"),
+            ("Leg Press", "accessory"),
+            ("Calf Raise", "isolation"),
+            ("Leg Curl", "isolation"),
+        ]),
+        ("Upper Body (Pull Focus)", [
+            ("Deadlift", "primary"),
+            ("Pull-Up", "secondary"),
+            ("Dumbbell Row", "accessory"),
+            ("Face Pull", "accessory"),
+            ("Hammer Curl", "isolation"),
+            ("Bicep Curl", "isolation"),
+        ]),
+        ("Lower Body (Posterior Focus)", [
+            ("Front Squat", "primary"),
+            ("Hip Thrust", "secondary"),
+            ("Bulgarian Split Squat", "accessory"),
+            ("Farmer's Carry", "accessory"),
+            ("Calf Raise", "isolation"),
+            ("Leg Curl", "isolation"),
+        ]),
+        ("Upper Body (Push/Pull Hybrid)", [
+            ("Overhead Press", "primary"),
+            ("Chin-Up", "secondary"),
+            ("Dumbbell Fly", "accessory"),
+            ("Barbell Row", "accessory"),
+            ("Weighted Dip", "isolation"),
+            ("Hammer Curl", "isolation"),
+        ]),
+    ],
+    "lose_weight": [
+        ("Full Body + Cardio", [
+            ("Squat", "primary"),
+            ("Push-Up", "secondary"),
+            ("Kettlebell Swing", "accessory"),
+            ("Mountain Climbers", "core"),
+            ("Plank", "core"),
+            ("Jump Rope", "finisher"),
+        ]),
+        ("Full Body + Cardio", [
+            ("Deadlift", "primary"),
+            ("Dumbbell Row", "secondary"),
+            ("Walking Lunge", "accessory"),
+            ("Bicycle Crunch", "core"),
+            ("Battle Ropes", "finisher"),
+            ("Burpees", "finisher"),
+        ]),
+        ("Full Body + Cardio", [
+            ("Goblet Squat", "primary"),
+            ("Incline Push-Up", "secondary"),
+            ("Box Step-Up", "accessory"),
+            ("Side Plank", "core"),
+            ("Jump Rope", "finisher"),
+            ("Mountain Climbers", "finisher"),
+        ]),
+        ("Metabolic Circuit", [
+            ("Kettlebell Swing", "primary"),
+            ("Burpees", "secondary"),
+            ("Sled Push", "accessory"),
+            ("Plank", "core"),
+            ("Battle Ropes", "finisher"),
+            ("Jump Rope", "finisher"),
+        ]),
+        ("Full Body + Cardio", [
+            ("Bench Press", "primary"),
+            ("Walking Lunge", "secondary"),
+            ("Deadlift", "accessory"),
+            ("Russian Twist", "core"),
+            ("Side Plank", "core"),
+            ("Sprint Intervals", "finisher"),
+        ]),
     ],
     "improve_endurance": [
-        ("Monday", "Interval Cardio", ["Rowing Intervals", "Burpees", "Jump Rope"]),
-        ("Wednesday", "Tempo Run + Core", ["Tempo Run", "Plank", "Russian Twist"]),
-        ("Friday", "Circuit Training", ["Kettlebell Swing", "Box Step-Up", "Battle Ropes"]),
+        ("Interval Cardio", [
+            ("Sprint Intervals", "primary"),
+            ("Jump Rope", "secondary"),
+            ("Kettlebell Swing", "accessory"),
+            ("Plank", "core"),
+            ("Burpees", "finisher"),
+            ("Mountain Climbers", "finisher"),
+        ]),
+        ("Tempo Run + Core", [
+            ("Tempo Run", "primary"),
+            ("Brisk Walk", "secondary"),
+            ("Bicycle Crunch", "core"),
+            ("Russian Twist", "core"),
+            ("Hanging Leg Raise", "core"),
+            ("Side Plank", "core"),
+        ]),
+        ("Circuit Training", [
+            ("Kettlebell Swing", "primary"),
+            ("Box Step-Up", "secondary"),
+            ("Battle Ropes", "accessory"),
+            ("Plank", "core"),
+            ("Burpees", "finisher"),
+            ("Jump Rope", "finisher"),
+        ]),
+        ("Hill/Speed Work", [
+            ("Hill Sprints", "primary"),
+            ("High Knees", "secondary"),
+            ("Sprint Intervals", "accessory"),
+            ("Plank", "core"),
+            ("Jumping Jacks", "finisher"),
+            ("Burpees", "finisher"),
+        ]),
+        ("Long Steady Cardio + Core", [
+            ("Cycling", "primary"),
+            ("Brisk Walk", "secondary"),
+            ("Bicycle Crunch", "core"),
+            ("Side Plank", "core"),
+            ("Russian Twist", "core"),
+            ("Plank", "core"),
+        ]),
     ],
     "general_fitness": [
-        ("Monday", "Full Body", ["Squat", "Push-Up", "Row", "Plank"]),
-        ("Wednesday", "Cardio + Mobility", ["Brisk Walk/Jog", "Hip Mobility Drills", "Side Plank"]),
-        ("Friday", "Full Body", ["Lunges", "Overhead Press", "Deadlift", "Bicycle Crunch"]),
+        ("Full Body", [
+            ("Squat", "primary"),
+            ("Push-Up", "secondary"),
+            ("Dumbbell Row", "accessory"),
+            ("Walking Lunge", "accessory"),
+            ("Plank", "core"),
+            ("Bicycle Crunch", "core"),
+        ]),
+        ("Cardio + Mobility", [
+            ("Brisk Walk/Jog", "primary"),
+            ("Hip Mobility Drills", "secondary"),
+            ("Cat-Cow Stretch", "accessory"),
+            ("Side Plank", "core"),
+            ("Jumping Jacks", "finisher"),
+            ("Bicycle Crunch", "core"),
+        ]),
+        ("Full Body", [
+            ("Deadlift", "primary"),
+            ("Overhead Press", "secondary"),
+            ("Walking Lunge", "accessory"),
+            ("Dumbbell Row", "accessory"),
+            ("Russian Twist", "core"),
+            ("Calf Raise", "isolation"),
+        ]),
+        ("Core + Balance", [
+            ("Plank", "core"),
+            ("Side Plank", "core"),
+            ("Bird Dog", "core"),
+            ("Single-Leg Balance", "core"),
+            ("Wall Sit", "core"),
+            ("Farmer's Carry", "accessory"),
+        ]),
+        ("Full Body", [
+            ("Squat", "primary"),
+            ("Bench Press", "secondary"),
+            ("Bent-Over Row", "accessory"),
+            ("Step-Up", "accessory"),
+            ("Bicep Curl", "isolation"),
+            ("Calf Raise", "isolation"),
+        ]),
     ],
 }
+
+
+def _build_exercise(name: str, role: str, difficulty: str) -> WorkoutExercise:
+    role_table = _ROLE_PROGRAMMING.get(role, _ROLE_PROGRAMMING["accessory"])
+    volume = role_table.get(difficulty, role_table["beginner"])
+    reps = _HOLD_TIME_BY_DIFFICULTY[difficulty] if name in _HOLD_EXERCISES else volume["reps"]
+    return WorkoutExercise(
+        name=name,
+        sets=volume["sets"],
+        reps=reps,
+        rest=volume["rest"],
+        notes=role_table["progression"],
+    )
 
 
 def _build_plan(fitness_goal: str, activity_level: str, workout_experience: str) -> WorkoutPlanContent:
-    volume = _VOLUME_BY_EXPERIENCE.get(workout_experience, _VOLUME_BY_EXPERIENCE["beginner"])
-    split = _SPLIT_BY_GOAL.get(fitness_goal, _SPLIT_BY_GOAL["general_fitness"])
+    level = _LEVEL_CONFIG.get(workout_experience, _LEVEL_CONFIG["beginner"])
+    templates = _EXERCISE_POOL_BY_GOAL.get(fitness_goal, _EXERCISE_POOL_BY_GOAL["general_fitness"])
 
     weekly_schedule = [
         WorkoutDay(
-            day=day,
+            day=day_name,
             focus=focus,
             exercises=[
-                WorkoutExercise(name=name, sets=volume["sets"], reps=volume["reps"])
-                for name in exercises
+                _build_exercise(name, role, workout_experience)
+                for name, role in exercise_pool[: level["exercises_per_day"]]
             ],
         )
-        for day, focus, exercises in split
+        for day_name, (focus, exercise_pool) in zip(level["days"], templates)
     ]
 
     summary = (
         f"A {workout_experience}-level, {activity_level.replace('_', ' ')} plan focused on "
-        f"{fitness_goal.replace('_', ' ')}, across {len(weekly_schedule)} sessions per week."
+        f"{fitness_goal.replace('_', ' ')}, across {len(weekly_schedule)} sessions per week "
+        f"with {level['exercises_per_day']} exercises per session."
     )
 
-    return WorkoutPlanContent(summary=summary, weekly_schedule=weekly_schedule)
+    return WorkoutPlanContent(
+        summary=summary,
+        weekly_schedule=weekly_schedule,
+        difficulty=workout_experience,
+        progression_guidance=_OVERALL_PROGRESSION_NOTE.get(
+            workout_experience, _OVERALL_PROGRESSION_NOTE["beginner"]
+        ),
+    )
 
 
 @agent.on_rest_get("/health", HealthResponse)

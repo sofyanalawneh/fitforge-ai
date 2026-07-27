@@ -2,8 +2,10 @@ import { useState } from "react";
 import { ApiError, apiClient } from "../services/apiClient";
 import type { WorkoutPlanContent } from "../types";
 import { LoadingState } from "../components/LoadingState";
+import { PlanImage } from "../components/PlanImage";
 import { StatusAlert } from "../components/StatusAlert";
 import { IconDumbbell } from "../components/icons";
+import { getExerciseImage, getWorkoutCoverImage } from "../utils/planImages";
 
 type Status = "idle" | "loading" | "error" | "profile_incomplete" | "ready" | "saved";
 
@@ -80,8 +82,17 @@ export function GenerateWorkout() {
       {plan && (status === "ready" || status === "saved") && (
         <div className="card-ff mt-3 ff-animate-in">
           <div className="card-ff-body">
+            <PlanImage
+              src={getWorkoutCoverImage(plan.summary)}
+              alt="Workout plan cover"
+              variant="cover"
+              priority
+            />
             <div className="plan-summary-banner">
               <p>{plan.summary}</p>
+              {plan.progressionGuidance && (
+                <p className="text-muted small mb-0">{plan.progressionGuidance}</p>
+              )}
             </div>
             {plan.weeklySchedule.map((day, index) => (
               <div
@@ -94,9 +105,17 @@ export function GenerateWorkout() {
                 </h5>
                 {day.exercises.map((exercise) => (
                   <div key={exercise.name} className="plan-exercise-row">
-                    <span className="exercise-name">{exercise.name}</span>
+                    <div className="d-flex align-items-center gap-2">
+                      <PlanImage
+                        src={getExerciseImage(exercise.name)}
+                        alt={exercise.name}
+                        variant="thumb"
+                      />
+                      <span className="exercise-name">{exercise.name}</span>
+                    </div>
                     <span className="exercise-volume">
-                      {exercise.sets} sets × {exercise.reps} reps
+                      {exercise.sets} {exercise.sets === 1 ? "set" : "sets"} × {exercise.reps}
+                      {exercise.rest && ` · ${exercise.rest} rest`}
                     </span>
                   </div>
                 ))}

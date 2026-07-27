@@ -41,6 +41,7 @@ export interface WorkoutExercise {
   name: string;
   sets: number;
   reps: string;
+  rest?: string;
   notes?: string;
 }
 
@@ -53,6 +54,8 @@ export interface WorkoutDay {
 export interface WorkoutPlanContent {
   summary: string;
   weeklySchedule: WorkoutDay[];
+  difficulty?: WorkoutExperience;
+  progressionGuidance?: string;
 }
 
 export interface MealEntry {

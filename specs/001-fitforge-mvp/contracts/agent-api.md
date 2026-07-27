@@ -19,17 +19,25 @@ with `/workout/generate` and `/meal/generate` respectively (see research.md deci
 ```text
 {
   summary: string,               # short description of the plan's approach
-  weeklySchedule: [               # one entry per training day
+  weeklySchedule: [               # one entry per training day; count varies by workoutExperience
     {
       day: string,                # e.g. "Monday"
       focus: string,               # e.g. "Upper Body"
       exercises: [
-        { name: string, sets: number, reps: string, notes?: string }
+        { name: string, sets: number, reps: string, rest?: string, notes?: string }
       ]
     }
-  ]
+  ],
+  difficulty?: string,            # echoes profile.workoutExperience used to generate this plan
+  progressionGuidance?: string    # how to progress at this difficulty level over time
 }
 ```
+
+`difficulty`, `progressionGuidance`, and each exercise's `rest` are optional for backward
+compatibility with plans generated/saved before these fields existed. Days per session,
+exercise count/selection, sets, reps, and rest all vary by `workoutExperience`
+(beginner/intermediate/advanced) — see `_LEVEL_CONFIG` / `_EXERCISE_POOL_BY_GOAL` in
+`agents/src/workout_agent.py`.
 
 ## `POST /meal/generate` (meal agent)
 

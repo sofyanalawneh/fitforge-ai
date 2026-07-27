@@ -72,7 +72,7 @@ export function Profile() {
       {saved && <StatusAlert variant="success">Profile saved.</StatusAlert>}
 
       <form onSubmit={handleSubmit} className="card-ff">
-        <div className="form-section">
+        <div className="form-section ff-animate-in" style={{ animationDelay: "0ms" }}>
           <h2>
             <span className="section-card-icon">
               <IconUser />
@@ -135,7 +135,7 @@ export function Profile() {
           </div>
         </div>
 
-        <div className="form-section">
+        <div className="form-section ff-animate-in" style={{ animationDelay: "60ms" }}>
           <h2>
             <span className="section-card-icon">
               <IconTarget />
@@ -186,7 +186,7 @@ export function Profile() {
           </div>
         </div>
 
-        <div className="form-section">
+        <div className="form-section ff-animate-in" style={{ animationDelay: "120ms" }}>
           <h2>
             <span className="section-card-icon">
               <IconSalad />

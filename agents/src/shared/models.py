@@ -24,6 +24,7 @@ class WorkoutExercise(BaseModel):
     name: str
     sets: int
     reps: str
+    rest: Optional[str] = None
     notes: Optional[str] = None
 
 
@@ -36,6 +37,8 @@ class WorkoutDay(BaseModel):
 class WorkoutPlanContent(BaseModel):
     summary: str
     weekly_schedule: List[WorkoutDay]
+    difficulty: Optional[str] = None
+    progression_guidance: Optional[str] = None
 
 
 class WorkoutGenerateResponse(BaseModel):
