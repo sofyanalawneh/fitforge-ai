@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 import { apiClient } from "../services/apiClient";
 import type { Plan } from "../types";
 import { LoadingState } from "../components/LoadingState";
@@ -30,6 +31,8 @@ function assignDistinctCovers(plans: Plan[]): Map<string, string> {
 }
 
 export function Dashboard() {
+  const { user } = useAuth();
+  const firstName = user?.displayName?.trim().split(/\s+/)[0];
   const [plans, setPlans] = useState<Plan[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -60,7 +63,7 @@ export function Dashboard() {
         <span className="ff-eyebrow">
           <IconLayoutGrid /> Dashboard
         </span>
-        <h1>Your Dashboard</h1>
+        <h1>{firstName ? `Welcome, ${firstName} 👋` : "Welcome 👋"}</h1>
         <p>All your saved workout and meal plans in one place.</p>
       </div>
 

@@ -1,15 +1,17 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { ApiError, apiClient } from "../services/apiClient";
 import type { WorkoutPlanContent } from "../types";
 import { LoadingState } from "../components/LoadingState";
 import { PlanImage } from "../components/PlanImage";
 import { StatusAlert } from "../components/StatusAlert";
-import { IconDumbbell } from "../components/icons";
+import { IconArrowRight, IconDumbbell } from "../components/icons";
 import { getExerciseImage, getWorkoutCoverImage } from "../utils/planImages";
 
 type Status = "idle" | "loading" | "error" | "profile_incomplete" | "ready" | "saved";
 
 export function GenerateWorkout() {
+  const navigate = useNavigate();
   const [status, setStatus] = useState<Status>("idle");
   const [plan, setPlan] = useState<WorkoutPlanContent | null>(null);
 
@@ -66,7 +68,19 @@ export function GenerateWorkout() {
         </StatusAlert>
       )}
 
-      {status === "saved" && <StatusAlert variant="success">Plan saved to your dashboard.</StatusAlert>}
+      {status === "saved" && (
+        <>
+          <StatusAlert variant="success">Plan saved to your dashboard.</StatusAlert>
+          <button
+            type="button"
+            className="btn btn-brand btn-lg mb-3 d-inline-flex align-items-center gap-2"
+            onClick={() => navigate("/dashboard")}
+          >
+            Go to Dashboard
+            <IconArrowRight />
+          </button>
+        </>
+      )}
 
       {(status === "idle" ||
         status === "error" ||
