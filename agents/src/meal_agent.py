@@ -480,10 +480,13 @@ def _build_plan(fitness_goal: str, dietary_preferences: str, variation_seed: str
 
     daily_meals = [_build_meal_entry(meal, rng.choice(options), note) for meal, options in slots.items()]
 
-    summary = (
-        f"A {dietary_preferences.replace('_', ' ')} meal plan supporting "
-        f"{fitness_goal.replace('_', ' ')}."
-    )
+    if dietary_preferences == "none":
+        summary = f"A meal plan supporting the user's {fitness_goal.replace('_', ' ')} goal."
+    else:
+        summary = (
+            f"A {dietary_preferences.replace('_', ' ')} meal plan supporting "
+            f"{fitness_goal.replace('_', ' ')}."
+        )
 
     return MealPlanContent(summary=summary, daily_meals=daily_meals)
 
