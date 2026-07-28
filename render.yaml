@@ -23,7 +23,7 @@ services:
       - key: MEAL_AGENT_URL
         sync: false
       - key: AGENT_REQUEST_TIMEOUT_MS
-        value: 30000
+        value: 60000
       - key: USE_FIREBASE_EMULATOR
         value: "false"
 

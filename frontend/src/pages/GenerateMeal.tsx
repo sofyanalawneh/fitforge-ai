@@ -3,10 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { ApiError, apiClient } from "../services/apiClient";
 import type { MealPlanContent } from "../types";
 import { LoadingState } from "../components/LoadingState";
-import { PlanImage } from "../components/PlanImage";
 import { StatusAlert } from "../components/StatusAlert";
+import { InfoNotice } from "../components/plan/InfoNotice";
+import { MealCard } from "../components/plan/MealCard";
 import { IconArrowRight, IconSalad } from "../components/icons";
-import { MEAL_PLACEHOLDER, getMealImage } from "../utils/planImages";
 
 type Status = "idle" | "loading" | "error" | "profile_incomplete" | "ready" | "saved";
 
@@ -40,7 +40,7 @@ export function GenerateMeal() {
   }
 
   return (
-    <div className="container ff-page ff-page-medium">
+    <div className="container ff-page ff-page-wide">
       <div className="ff-page-header">
         <span className="ff-eyebrow">
           <IconSalad /> Meal plan
@@ -94,46 +94,21 @@ export function GenerateMeal() {
       {status === "loading" && <LoadingState label="Generating your plan..." />}
 
       {plan && (status === "ready" || status === "saved") && (
-        <div className="card-ff mt-3 ff-animate-in">
-          <div className="card-ff-body">
-            <PlanImage
-              src={getMealImage(plan.dailyMeals[0])}
-              alt="Meal plan cover"
-              variant="cover"
-              fallbackSrc={MEAL_PLACEHOLDER}
-              priority
-            />
-            <div className="plan-summary-banner">
-              <p>{plan.summary}</p>
-            </div>
+        <>
+          <InfoNotice>
+            <p>{plan.summary}</p>
+          </InfoNotice>
+          <div className="plan-card-list">
             {plan.dailyMeals.map((meal, index) => (
-              <div
-                key={meal.meal}
-                className="meal-entry ff-animate-in"
-                style={{ animationDelay: `${index * 60}ms` }}
-              >
-                <div className="d-flex align-items-start gap-2">
-                  <PlanImage
-                    src={getMealImage(meal)}
-                    alt={meal.meal}
-                    variant="thumb"
-                    fallbackSrc={MEAL_PLACEHOLDER}
-                  />
-                  <div>
-                    <span className="meal-label">{meal.meal}</span>
-                    {meal.description}
-                    {meal.notes && <div className="text-muted small mt-1">{meal.notes}</div>}
-                  </div>
-                </div>
-              </div>
+              <MealCard key={`${meal.meal}-${index}`} meal={meal} style={{ animationDelay: `${index * 60}ms` }} />
             ))}
-            {status === "ready" && (
-              <button className="btn btn-meal mt-3" onClick={save}>
-                Save Plan
-              </button>
-            )}
           </div>
-        </div>
+          {status === "ready" && (
+            <button className="btn btn-meal mt-3" onClick={save}>
+              Save Plan
+            </button>
+          )}
+        </>
       )}
     </div>
   );

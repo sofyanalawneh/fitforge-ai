@@ -30,6 +30,47 @@ export function getWorkoutCoverImage(summaryOrGoal?: string | null): string {
   return WORKOUT_PLACEHOLDER;
 }
 
+// Per-day-card visual, keyed by that day's `focus` string (e.g. "Upper Body
+// (Push Focus)", "Full Body + Cardio", "Core + Balance" — see
+// agents/src/workout_agent.py's _EXERCISE_POOL_BY_GOAL for every real value
+// this agent currently produces). Distinct from getWorkoutCoverImage above,
+// which keys off the whole-plan goal for the Dashboard/summary cover, not a
+// single day's focus. Body-region matches are checked before the
+// cardio/conditioning bucket so a mixed day like "Full Body + Cardio" (mostly
+// strength work) still gets the full-body photo rather than the cardio one.
+// "Core + Balance" and any future rest/recovery day intentionally fall
+// through to an icon panel rather than being forced onto an unrelated photo.
+export type WorkoutIconKey = "dumbbell" | "core" | "rest";
+
+export type WorkoutVisual = { kind: "image"; src: string } | { kind: "icon"; icon: WorkoutIconKey };
+
+const WORKOUT_FOCUS_IMAGES: ReadonlyArray<readonly [RegExp, string]> = [
+  [/full body/, "/images/workouts/full-body.webp"],
+  [/upper body|chest|\bback\b|shoulder|\barm/, "/images/workouts/upper-body.webp"],
+  [/lower body|\bleg|glute|quad|hamstring/, "/images/workouts/lower-body.webp"],
+  [/cardio|interval|metabolic|circuit|tempo|hill|speed|sprint|conditioning/, "/images/workouts/cardio.webp"],
+  [/strength|power/, "/images/workouts/strength.webp"],
+];
+
+const WORKOUT_FOCUS_ICONS: ReadonlyArray<readonly [RegExp, WorkoutIconKey]> = [
+  [/\brest\b|recovery|deload/, "rest"],
+  [/\bcore\b|balance|mobility/, "core"],
+];
+
+/** `focus` is a WorkoutDay's `focus` field. Returns either a local photo or
+ * an icon key for a styled visual panel — never a broken/missing image path
+ * — so callers can render a consistent visual area either way. */
+export function getWorkoutFocusVisual(focus?: string | null): WorkoutVisual {
+  const text = normalize(focus);
+  for (const [pattern, image] of WORKOUT_FOCUS_IMAGES) {
+    if (pattern.test(text)) return { kind: "image", src: image };
+  }
+  for (const [pattern, icon] of WORKOUT_FOCUS_ICONS) {
+    if (pattern.test(text)) return { kind: "icon", icon };
+  }
+  return { kind: "icon", icon: "dumbbell" };
+}
+
 // Per-exercise matching, NOT muscle-group matching: two exercises that train
 // the same muscle (e.g. Lateral Raise vs. Bicep Curl, or Bent-Over Row vs.
 // Pull-Up) must never share an image just because they're same-muscle. Every

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { WORKOUT_PLACEHOLDER } from "../utils/planImages";
 
-type PlanImageVariant = "cover" | "card" | "thumb";
+type PlanImageVariant = "cover" | "card" | "thumb" | "plan";
 
 interface PlanImageProps {
   src: string;

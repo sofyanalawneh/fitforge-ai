@@ -42,6 +42,10 @@ export interface WorkoutExercise {
   sets: number;
   reps: string;
   rest?: string;
+  /** Not currently returned by the workout agent; kept optional so a future
+   * duration-based exercise (e.g. a timed cardio finisher) renders without a
+   * type or component change. */
+  duration?: string;
   notes?: string;
 }
 
@@ -62,6 +66,12 @@ export interface MealEntry {
   meal: string;
   description: string;
   notes?: string;
+  /** Not currently returned by the meal agent; kept optional so nutrition
+   * stats render automatically as soon as the API starts sending them. */
+  calories?: number;
+  protein?: number;
+  carbs?: number;
+  fat?: number;
 }
 
 export interface MealPlanContent {

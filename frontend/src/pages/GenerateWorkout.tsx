@@ -3,10 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { ApiError, apiClient } from "../services/apiClient";
 import type { WorkoutPlanContent } from "../types";
 import { LoadingState } from "../components/LoadingState";
-import { PlanImage } from "../components/PlanImage";
 import { StatusAlert } from "../components/StatusAlert";
+import { InfoNotice } from "../components/plan/InfoNotice";
+import { WorkoutCard } from "../components/plan/WorkoutCard";
 import { IconArrowRight, IconDumbbell } from "../components/icons";
-import { getExerciseImage, getWorkoutCoverImage } from "../utils/planImages";
 
 type Status = "idle" | "loading" | "error" | "profile_incomplete" | "ready" | "saved";
 
@@ -40,7 +40,7 @@ export function GenerateWorkout() {
   }
 
   return (
-    <div className="container ff-page ff-page-medium">
+    <div className="container ff-page ff-page-wide">
       <div className="ff-page-header">
         <span className="ff-eyebrow">
           <IconDumbbell /> Workout plan
@@ -94,54 +94,24 @@ export function GenerateWorkout() {
       {status === "loading" && <LoadingState label="Generating your plan..." />}
 
       {plan && (status === "ready" || status === "saved") && (
-        <div className="card-ff mt-3 ff-animate-in">
-          <div className="card-ff-body">
-            <PlanImage
-              src={getWorkoutCoverImage(plan.summary)}
-              alt="Workout plan cover"
-              variant="cover"
-              priority
-            />
-            <div className="plan-summary-banner">
-              <p>{plan.summary}</p>
-              {plan.progressionGuidance && (
-                <p className="text-muted small mb-0">{plan.progressionGuidance}</p>
-              )}
-            </div>
-            {plan.weeklySchedule.map((day, index) => (
-              <div
-                key={day.day}
-                className="plan-day-card ff-animate-in"
-                style={{ animationDelay: `${index * 60}ms` }}
-              >
-                <h5>
-                  {day.day} — {day.focus}
-                </h5>
-                {day.exercises.map((exercise) => (
-                  <div key={exercise.name} className="plan-exercise-row">
-                    <div className="d-flex align-items-center gap-2">
-                      <PlanImage
-                        src={getExerciseImage(exercise.name)}
-                        alt={exercise.name}
-                        variant="thumb"
-                      />
-                      <span className="exercise-name">{exercise.name}</span>
-                    </div>
-                    <span className="exercise-volume">
-                      {exercise.sets} {exercise.sets === 1 ? "set" : "sets"} × {exercise.reps}
-                      {exercise.rest && ` · ${exercise.rest} rest`}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            ))}
-            {status === "ready" && (
-              <button className="btn btn-meal" onClick={save}>
-                Save Plan
-              </button>
+        <>
+          <InfoNotice>
+            <p>{plan.summary}</p>
+            {plan.progressionGuidance && (
+              <p className="text-muted small mb-0">{plan.progressionGuidance}</p>
             )}
+          </InfoNotice>
+          <div className="plan-card-list">
+            {plan.weeklySchedule.map((day, index) => (
+              <WorkoutCard key={`${day.day}-${index}`} day={day} style={{ animationDelay: `${index * 60}ms` }} />
+            ))}
           </div>
-        </div>
+          {status === "ready" && (
+            <button className="btn btn-meal mt-3" onClick={save}>
+              Save Plan
+            </button>
+          )}
+        </>
       )}
     </div>
   );

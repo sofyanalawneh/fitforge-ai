@@ -1685,3 +1685,203 @@ html {
     text-align: left;
   }
 }
+
+/* ---------- Plan page header (meal/workout plan detail pages) ---------- */
+
+.plan-page-header {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1.75rem;
+}
+
+.plan-page-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+@media (min-width: 992px) {
+  .plan-page-header {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+  }
+
+  .plan-page-header-actions {
+    flex-shrink: 0;
+  }
+}
+
+/* ---------- Plan cards (MealCard / WorkoutCard shared foundation) ---------- */
+
+.plan-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.plan-card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.plan-card-visual {
+  flex-shrink: 0;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+}
+
+.plan-card-visual > * {
+  width: 100%;
+  height: 100%;
+}
+
+.plan-card-content {
+  flex: 1;
+  min-width: 0;
+  padding: 1.25rem 1.5rem;
+}
+
+@media (min-width: 992px) {
+  .plan-card {
+    flex-direction: row;
+    align-items: stretch;
+  }
+
+  .plan-card-visual {
+    width: 280px;
+    aspect-ratio: auto;
+  }
+
+  .plan-card-content {
+    padding: 1.5rem 1.85rem;
+  }
+}
+
+.ff-image-plan {
+  width: 100%;
+  height: 100%;
+}
+
+.plan-visual-icon-panel {
+  width: 100%;
+  height: 100%;
+  min-height: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--ff-workout-soft), #ffffff);
+  color: var(--ff-workout);
+}
+
+.plan-visual-icon-panel svg {
+  width: 48px;
+  height: 48px;
+}
+
+.plan-card-eyebrow {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-bottom: 0.3rem;
+}
+
+.plan-card.accent-workout .plan-card-eyebrow {
+  color: var(--ff-workout);
+}
+
+.plan-card.accent-meal .plan-card-eyebrow {
+  color: var(--ff-meal);
+}
+
+.plan-card-title {
+  font-size: 1.15rem;
+  margin-bottom: 0.5rem;
+}
+
+.plan-card-notes {
+  color: var(--ff-muted);
+  font-size: 0.9rem;
+  margin-bottom: 0;
+}
+
+.plan-card-exercise-list {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+}
+
+.plan-card-exercise {
+  padding: 0.6rem 0;
+  border-bottom: 1px dashed var(--ff-border);
+}
+
+.plan-card-exercise:first-child {
+  padding-top: 0;
+}
+
+.plan-card-exercise:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.plan-card-exercise-main {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.25rem 0.75rem;
+}
+
+.plan-card-exercise-name {
+  font-weight: 600;
+}
+
+.plan-card-exercise-volume {
+  color: var(--ff-muted);
+  font-size: 0.88rem;
+  white-space: nowrap;
+}
+
+.plan-card-exercise-notes {
+  color: var(--ff-muted);
+  font-size: 0.82rem;
+  margin: 0.2rem 0 0;
+}
+
+.plan-stat-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 0.85rem;
+}
+
+.plan-stat {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.1rem;
+  padding: 0.5rem 0.85rem;
+  border-radius: var(--ff-radius-sm);
+  background-color: var(--ff-surface);
+  border: 1px solid var(--ff-border);
+  min-width: 84px;
+}
+
+.plan-stat-value {
+  font-weight: 800;
+  font-size: 1rem;
+  color: var(--ff-ink);
+  line-height: 1.1;
+}
+
+.plan-stat-label {
+  font-size: 0.72rem;
+  color: var(--ff-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
