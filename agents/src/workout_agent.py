@@ -8,6 +8,7 @@ that single, known, first-party caller (constitution Principle I).
 
 import logging
 import os
+import random
 
 from uagents import Agent, Context
 
@@ -282,33 +283,64 @@ _EXERCISE_POOL_BY_GOAL = {
 }
 
 
-def _build_exercise(name: str, role: str, difficulty: str) -> WorkoutExercise:
+def _build_exercise(name: str, role: str, difficulty: str, rng: random.Random) -> WorkoutExercise:
     role_table = _ROLE_PROGRAMMING.get(role, _ROLE_PROGRAMMING["accessory"])
     volume = role_table.get(difficulty, role_table["beginner"])
     reps = _HOLD_TIME_BY_DIFFICULTY[difficulty] if name in _HOLD_EXERCISES else volume["reps"]
+    # Small safe jitter (+/-1 set) around the vetted baseline for this
+    # role/difficulty so identical requests don't always return an identical
+    # set count. Floored at 1 (never removes the exercise, never adds enough
+    # volume to be unsafe).
+    sets = max(1, volume["sets"] + rng.choice([-1, 0, 0, 1]))
     return WorkoutExercise(
         name=name,
-        sets=volume["sets"],
+        sets=sets,
         reps=reps,
         rest=volume["rest"],
         notes=role_table["progression"],
     )
 
 
-def _build_plan(fitness_goal: str, activity_level: str, workout_experience: str) -> WorkoutPlanContent:
+def _select_day_exercises(exercise_pool, count, rng: random.Random):
+    """Keeps the day's primary lift first (the heaviest compound movement
+    should always lead a session), then randomly selects and orders the
+    remaining slots from the rest of that day's pool. This means a
+    beginner/intermediate day — which only uses a subset of the full
+    6-exercise pool — doesn't always drop the same tail exercises, and the
+    non-primary exercise order varies between requests."""
+    primary = [ex for ex in exercise_pool if ex[1] == "primary"]
+    rest = [ex for ex in exercise_pool if ex[1] != "primary"]
+    rng.shuffle(rest)
+    remaining_slots = max(0, count - len(primary))
+    return primary + rest[:remaining_slots]
+
+
+def _build_plan(
+    fitness_goal: str,
+    activity_level: str,
+    workout_experience: str,
+    variation_seed: str,
+) -> WorkoutPlanContent:
+    rng = random.Random(variation_seed)
     level = _LEVEL_CONFIG.get(workout_experience, _LEVEL_CONFIG["beginner"])
     templates = _EXERCISE_POOL_BY_GOAL.get(fitness_goal, _EXERCISE_POOL_BY_GOAL["general_fitness"])
+
+    # Shuffle which day-template lands on which day of the week so the
+    # training split itself varies between requests, not just the exercises
+    # within a fixed split.
+    shuffled_templates = list(templates)
+    rng.shuffle(shuffled_templates)
 
     weekly_schedule = [
         WorkoutDay(
             day=day_name,
             focus=focus,
             exercises=[
-                _build_exercise(name, role, workout_experience)
-                for name, role in exercise_pool[: level["exercises_per_day"]]
+                _build_exercise(name, role, workout_experience, rng)
+                for name, role in _select_day_exercises(exercise_pool, level["exercises_per_day"], rng)
             ],
         )
-        for day_name, (focus, exercise_pool) in zip(level["days"], templates)
+        for day_name, (focus, exercise_pool) in zip(level["days"], shuffled_templates)
     ]
 
     summary = (
@@ -343,6 +375,7 @@ async def handle_generate(ctx: Context, req: WorkoutGenerateRequest) -> WorkoutG
             req.profile.fitness_goal,
             req.profile.activity_level,
             req.profile.workout_experience,
+            req.request_id,
         )
     except Exception as err:  # noqa: BLE001 - log with context, then let the
         # uagents REST layer's schema-validation fallback turn this into a

@@ -4,7 +4,8 @@
 // fallback so a missing/old field or an unrecognized name never breaks
 // rendering — see PlanImage for the runtime <img> fallback as well.
 
-import type { MealPlanContent, Plan, WorkoutPlanContent } from "../types";
+import type { MealPlanContent, Plan, WorkoutDay, WorkoutPlanContent } from "../types";
+import { EXERCISE_INFO, getExerciseInfo, type MuscleGroup } from "./exerciseInfo";
 
 export const WORKOUT_PLACEHOLDER = "/images/placeholders/workout-placeholder.webp";
 export const MEAL_PLACEHOLDER = "/images/placeholders/meal-placeholder.webp";
@@ -150,6 +151,55 @@ export function getExerciseImage(name?: string | null): string {
     if (pattern.test(text)) return image;
   }
   return WORKOUT_PLACEHOLDER;
+}
+
+// Fallback pool for the dedup pass below: every real (non-placeholder) photo
+// available, grouped by the muscle group it actually depicts (per
+// exerciseInfo.ts). Computed once from EXERCISE_INFO rather than hand-authored
+// a second time, so the two tables can never drift out of sync.
+const MUSCLE_GROUP_IMAGES: Record<MuscleGroup, string[]> = (() => {
+  const groups: Record<MuscleGroup, Set<string>> = {
+    chest: new Set(),
+    back: new Set(),
+    shoulders: new Set(),
+    arms: new Set(),
+    legs: new Set(),
+    core: new Set(),
+    cardio: new Set(),
+  };
+  for (const [name, info] of Object.entries(EXERCISE_INFO)) {
+    const image = getExerciseImage(name);
+    if (image !== WORKOUT_PLACEHOLDER) groups[info.muscleGroup].add(image);
+  }
+  const entries = Object.entries(groups).map(([group, images]) => [group, Array.from(images)] as const);
+  return Object.fromEntries(entries) as Record<MuscleGroup, string[]>;
+})();
+
+/** Per-exercise images for one workout day, in exercise order, with a dedup
+ * pass: if an exercise's own photo is missing (falls to the placeholder) or
+ * already used earlier in the same day, it's swapped for another unused
+ * photo from the same muscle group instead — so a day never shows the
+ * placeholder or an obviously repeated image when a same-muscle alternative
+ * exists (only true photo shortage falls back to the exercise's own default). */
+export function getWorkoutDayImages(day: WorkoutDay): string[] {
+  const used = new Set<string>();
+  const images: string[] = [];
+
+  for (const exercise of day.exercises) {
+    const ownImage = getExerciseImage(exercise.name);
+    let chosen = ownImage;
+
+    if (chosen === WORKOUT_PLACEHOLDER || used.has(chosen)) {
+      const info = getExerciseInfo(exercise.name);
+      const alternative = MUSCLE_GROUP_IMAGES[info.muscleGroup]?.find((src) => !used.has(src));
+      if (alternative) chosen = alternative;
+    }
+
+    used.add(chosen);
+    images.push(chosen);
+  }
+
+  return images;
 }
 
 // Tofu/paneer dishes have no matching local photo — critically, they must

@@ -62,12 +62,18 @@ export interface WorkoutPlanContent {
   progressionGuidance?: string;
 }
 
+export interface MealIngredient {
+  name: string;
+  quantity: string;
+}
+
 export interface MealEntry {
   meal: string;
   description: string;
   notes?: string;
-  /** Not currently returned by the meal agent; kept optional so nutrition
-   * stats render automatically as soon as the API starts sending them. */
+  /** Optional: not every saved plan has these (older saved plans predate
+   * this field), so callers must still handle their absence gracefully. */
+  ingredients?: MealIngredient[];
   calories?: number;
   protein?: number;
   carbs?: number;

@@ -55,10 +55,20 @@ export interface WorkoutPlanContent {
   progressionGuidance?: string;
 }
 
+export interface MealIngredient {
+  name: string;
+  quantity: string;
+}
+
 export interface MealEntry {
   meal: string;
   description: string;
   notes?: string;
+  ingredients?: MealIngredient[];
+  calories?: number;
+  protein?: number;
+  carbs?: number;
+  fat?: number;
 }
 
 export interface MealPlanContent {

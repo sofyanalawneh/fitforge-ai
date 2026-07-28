@@ -1885,3 +1885,400 @@ html {
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
+
+/* ---------- Plan stats bar (Goal/Level/Days.../Calories.../etc.) ---------- */
+
+.plan-stats-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1rem;
+  background: linear-gradient(135deg, var(--ff-ink), var(--ff-ink-soft));
+  border-radius: var(--ff-radius-lg);
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.5rem;
+  color: #fff;
+}
+
+.plan-stats-bar-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.plan-stats-bar-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--ff-radius-sm);
+  background-color: rgba(255, 255, 255, 0.12);
+  color: var(--ff-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.plan-stats-bar-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.plan-stats-bar-label {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.65);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.plan-stats-bar-value {
+  font-weight: 700;
+  font-size: 0.92rem;
+  white-space: nowrap;
+}
+
+/* ---------- Weekday tabs (workout page only) ---------- */
+
+.weekday-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.weekday-tab {
+  border: 1px solid var(--ff-border);
+  background-color: var(--ff-surface);
+  color: var(--ff-ink-soft);
+  font-weight: 700;
+  font-size: 0.8rem;
+  letter-spacing: 0.03em;
+  padding: 0.55rem 1.1rem;
+  border-radius: var(--ff-radius-sm);
+  cursor: pointer;
+  appearance: none;
+}
+
+.weekday-tab:hover,
+.weekday-tab:focus-visible {
+  border-color: var(--ff-workout);
+}
+
+.weekday-tab.active {
+  background-color: var(--ff-workout);
+  border-color: var(--ff-workout);
+  color: #fff;
+}
+
+/* ---------- Session summary (selected workout day) ---------- */
+
+.session-summary {
+  border: 1px solid var(--ff-border);
+  border-radius: var(--ff-radius-md);
+  background-color: #fbfbfd;
+  padding: 1.25rem 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.session-summary-title {
+  font-weight: 700;
+  color: var(--ff-workout);
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+}
+
+.session-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1rem;
+}
+
+.session-summary-item {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 0;
+}
+
+.session-summary-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--ff-radius-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.session-summary-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.session-summary-icon.tone-brand {
+  background-color: var(--ff-primary-light);
+  color: var(--ff-primary-dark);
+}
+
+.session-summary-icon.tone-workout {
+  background-color: var(--ff-workout-soft);
+  color: var(--ff-workout);
+}
+
+.session-summary-icon.tone-meal {
+  background-color: var(--ff-meal-soft);
+  color: var(--ff-meal);
+}
+
+.session-summary-label {
+  font-size: 0.72rem;
+  color: var(--ff-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.session-summary-value {
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+/* ---------- Tip card (workout progression / meal hydration) ---------- */
+
+.tip-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  border-radius: var(--ff-radius-md);
+  padding: 1rem 1.25rem;
+  margin-top: 1.25rem;
+}
+
+.tip-card.tone-workout {
+  background-color: var(--ff-workout-soft);
+}
+
+.tip-card.tone-meal {
+  background-color: var(--ff-meal-soft);
+}
+
+.tip-card-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background-color: #fff;
+  color: var(--ff-primary-dark);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tip-card-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.tip-card p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--ff-ink-soft);
+}
+
+/* ---------- Daily nutrition summary (meal page) ---------- */
+
+.daily-nutrition-summary {
+  background-color: var(--ff-meal-soft);
+  border: 1px solid #bfead2;
+  border-radius: var(--ff-radius-lg);
+  padding: 1.25rem 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.daily-nutrition-summary-title {
+  font-weight: 700;
+  color: var(--ff-meal);
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+}
+
+.daily-nutrition-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 1rem;
+}
+
+.daily-nutrition-summary-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: var(--ff-ink);
+  min-width: 0;
+}
+
+.daily-nutrition-summary-item svg {
+  width: 20px;
+  height: 20px;
+  color: var(--ff-meal);
+  flex-shrink: 0;
+}
+
+.daily-nutrition-summary-label {
+  font-size: 0.72rem;
+  color: var(--ff-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.daily-nutrition-summary-value {
+  font-weight: 700;
+  font-size: 0.92rem;
+}
+
+/* ---------- Workout exercise rows (WorkoutCard) ---------- */
+
+.workout-exercise-list {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+}
+
+.workout-exercise-row {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.85rem 0;
+  border-bottom: 1px dashed var(--ff-border);
+}
+
+.workout-exercise-row:first-child {
+  padding-top: 0;
+}
+
+.workout-exercise-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.workout-exercise-badge {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background-color: var(--ff-workout-soft);
+  color: var(--ff-workout);
+  font-weight: 700;
+  font-size: 0.8rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.workout-exercise-thumb.ff-image-thumb {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--ff-radius-sm);
+}
+
+.workout-exercise-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.workout-exercise-name {
+  font-weight: 700;
+  display: block;
+}
+
+.workout-exercise-description {
+  color: var(--ff-muted);
+  font-size: 0.85rem;
+  margin: 0.15rem 0 0.3rem;
+}
+
+.workout-exercise-muscles {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  color: var(--ff-workout);
+  font-weight: 600;
+}
+
+.workout-exercise-muscles-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--ff-workout);
+  flex-shrink: 0;
+}
+
+.workout-exercise-volume-box {
+  flex-shrink: 0;
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.workout-exercise-volume-main {
+  font-weight: 700;
+  font-size: 0.86rem;
+  white-space: nowrap;
+}
+
+.workout-exercise-rest {
+  color: var(--ff-muted);
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+/* ---------- Meal ingredient chips (MealCard) ---------- */
+
+.meal-ingredient-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.75rem 0;
+}
+
+.meal-ingredient-chip {
+  background-color: var(--ff-surface);
+  border: 1px solid var(--ff-border);
+  border-radius: 999px;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ff-ink-soft);
+}
+
+.meal-ingredient-chip-qty {
+  color: var(--ff-muted);
+  font-weight: 500;
+}
+
+/* ---------- Small-screen adjustments for the new components ---------- */
+
+@media (max-width: 575.98px) {
+  .workout-exercise-row {
+    flex-wrap: wrap;
+  }
+
+  .workout-exercise-thumb.ff-image-thumb {
+    width: 48px;
+    height: 48px;
+  }
+
+  .workout-exercise-volume-box {
+    flex-basis: 100%;
+    text-align: left;
+    padding-left: calc(26px + 0.85rem);
+  }
+
+  .plan-stats-bar {
+    padding: 1.1rem 1.25rem;
+  }
+
+  .session-summary,
+  .daily-nutrition-summary {
+    padding: 1.1rem 1.25rem;
+  }
+}

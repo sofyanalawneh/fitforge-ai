@@ -1,23 +1,48 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ApiError, apiClient } from "../services/apiClient";
-import type { WorkoutPlanContent } from "../types";
+import type { FitnessProfile, WorkoutPlanContent } from "../types";
 import { LoadingState } from "../components/LoadingState";
 import { StatusAlert } from "../components/StatusAlert";
 import { InfoNotice } from "../components/plan/InfoNotice";
+import { PlanStatsBar } from "../components/plan/PlanStatsBar";
+import { SessionSummary } from "../components/plan/SessionSummary";
+import { TipCard } from "../components/plan/TipCard";
+import { WeekdayTabs } from "../components/plan/WeekdayTabs";
 import { WorkoutCard } from "../components/plan/WorkoutCard";
-import { IconArrowRight, IconDumbbell } from "../components/icons";
+import {
+  IconArrowRight,
+  IconCalendarCheck,
+  IconCheckCircle,
+  IconDumbbell,
+  IconLayoutGrid,
+  IconRefresh,
+  IconTarget,
+} from "../components/icons";
+import { computeSessionSummary, computeWorkoutPlanStats } from "../utils/workoutStats";
 
 type Status = "idle" | "loading" | "error" | "profile_incomplete" | "ready" | "saved";
+
+const STAT_ICONS = [<IconTarget key="goal" />, <IconDumbbell key="level" />, <IconCalendarCheck key="days" />, <IconLayoutGrid key="sessions" />, <IconCheckCircle key="exercises" />];
 
 export function GenerateWorkout() {
   const navigate = useNavigate();
   const [status, setStatus] = useState<Status>("idle");
   const [plan, setPlan] = useState<WorkoutPlanContent | null>(null);
+  const [profile, setProfile] = useState<FitnessProfile | null>(null);
+  const [selectedDayIndex, setSelectedDayIndex] = useState(0);
+
+  useEffect(() => {
+    apiClient
+      .get<{ profile: FitnessProfile | null }>("/api/profile")
+      .then(({ profile }) => setProfile(profile))
+      .catch(() => undefined);
+  }, []);
 
   async function generate() {
     setStatus("loading");
     setPlan(null);
+    setSelectedDayIndex(0);
     try {
       const result = await apiClient.post<{ type: "workout"; content: WorkoutPlanContent }>(
         "/api/plans/workout/generate",
@@ -39,14 +64,30 @@ export function GenerateWorkout() {
     setStatus("saved");
   }
 
+  const selectedDay = plan?.weeklySchedule[selectedDayIndex];
+
   return (
     <div className="container ff-page ff-page-wide">
-      <div className="ff-page-header">
-        <span className="ff-eyebrow">
-          <IconDumbbell /> Workout plan
-        </span>
-        <h1>Generate a Workout Plan</h1>
-        <p>Built from your fitness goal, activity level, and workout experience.</p>
+      <div className="plan-page-header">
+        <div>
+          <span className="ff-eyebrow">
+            <IconDumbbell /> Workout plan
+          </span>
+          <h1>Generate a Workout Plan</h1>
+          <p>Built from your fitness goal, activity level, and workout experience.</p>
+        </div>
+        {plan && (status === "ready" || status === "saved") && (
+          <div className="plan-page-header-actions">
+            <button
+              type="button"
+              className="btn btn-outline-dark btn-sm d-inline-flex align-items-center gap-2"
+              onClick={generate}
+            >
+              <IconRefresh width={16} height={16} />
+              Generate another version
+            </button>
+          </div>
+        )}
       </div>
 
       {status === "profile_incomplete" && (
@@ -93,19 +134,34 @@ export function GenerateWorkout() {
 
       {status === "loading" && <LoadingState label="Generating your plan..." />}
 
-      {plan && (status === "ready" || status === "saved") && (
+      {plan && profile && (status === "ready" || status === "saved") && (
         <>
+          <PlanStatsBar
+            items={computeWorkoutPlanStats(plan, profile).map((stat, index) => ({
+              ...stat,
+              icon: STAT_ICONS[index],
+            }))}
+          />
           <InfoNotice>
             <p>{plan.summary}</p>
             {plan.progressionGuidance && (
               <p className="text-muted small mb-0">{plan.progressionGuidance}</p>
             )}
           </InfoNotice>
-          <div className="plan-card-list">
-            {plan.weeklySchedule.map((day, index) => (
-              <WorkoutCard key={`${day.day}-${index}`} day={day} style={{ animationDelay: `${index * 60}ms` }} />
-            ))}
-          </div>
+          <WeekdayTabs
+            days={plan.weeklySchedule.map((day) => day.day)}
+            selectedIndex={selectedDayIndex}
+            onSelect={setSelectedDayIndex}
+          />
+          {selectedDay && (
+            <>
+              <WorkoutCard day={selectedDay} />
+              <SessionSummary summary={computeSessionSummary(selectedDay, profile.weightKg, profile.workoutExperience)} />
+            </>
+          )}
+          <TipCard tone="workout">
+            Progressive overload is key. Try to increase the weight or reps slightly each week.
+          </TipCard>
           {status === "ready" && (
             <button className="btn btn-meal mt-3" onClick={save}>
               Save Plan

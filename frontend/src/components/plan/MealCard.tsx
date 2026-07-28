@@ -10,9 +10,9 @@ interface MealCardProps {
   style?: CSSProperties;
 }
 
-/** Renders a nutrition stat only when the API actually provides it — the
- * meal agent does not currently return calories/protein/carbs/fat, so this
- * row simply stays empty until it does; no values are invented here. */
+/** Renders a nutrition stat only when the API actually provides it — older
+ * saved plans may predate these fields, so this row simply stays empty for
+ * them; no values are invented here. */
 function buildNutritionStats(meal: MealEntry): Array<{ label: string; value: string }> {
   const stats: Array<{ label: string; value: string }> = [];
   if (meal.calories != null) stats.push({ label: "Calories", value: `${meal.calories} kcal` });
@@ -41,6 +41,15 @@ export function MealCard({ meal, style }: MealCardProps) {
       <span className="plan-card-eyebrow">{meal.meal}</span>
       <h3 className="plan-card-title">{meal.description}</h3>
       {meal.notes && <p className="plan-card-notes">{meal.notes}</p>}
+      {meal.ingredients && meal.ingredients.length > 0 && (
+        <div className="meal-ingredient-chips">
+          {meal.ingredients.map((ingredient) => (
+            <span className="meal-ingredient-chip" key={ingredient.name}>
+              {ingredient.name} <span className="meal-ingredient-chip-qty">{ingredient.quantity}</span>
+            </span>
+          ))}
+        </div>
+      )}
       {stats.length > 0 && (
         <div className="plan-stat-row">
           {stats.map((stat) => (

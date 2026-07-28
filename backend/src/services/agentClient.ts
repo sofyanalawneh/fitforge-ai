@@ -65,11 +65,27 @@ interface WorkoutAgentResponse {
   };
 }
 
+interface MealAgentIngredient {
+  name: string;
+  quantity: string;
+}
+
+interface MealAgentEntry {
+  meal: string;
+  description: string;
+  notes?: string | null;
+  ingredients?: MealAgentIngredient[] | null;
+  calories?: number | null;
+  protein_g?: number | null;
+  carbs_g?: number | null;
+  fat_g?: number | null;
+}
+
 interface MealAgentResponse {
   request_id: string;
   content: {
     summary: string;
-    daily_meals: MealPlanContent["dailyMeals"];
+    daily_meals: MealAgentEntry[];
   };
 }
 
@@ -122,6 +138,15 @@ export async function generateMealPlan(
 
   return {
     summary: response.content.summary,
-    dailyMeals: response.content.daily_meals,
+    dailyMeals: response.content.daily_meals.map((entry) => ({
+      meal: entry.meal,
+      description: entry.description,
+      notes: entry.notes ?? undefined,
+      ingredients: entry.ingredients ?? undefined,
+      calories: entry.calories ?? undefined,
+      protein: entry.protein_g ?? undefined,
+      carbs: entry.carbs_g ?? undefined,
+      fat: entry.fat_g ?? undefined,
+    })),
   };
 }

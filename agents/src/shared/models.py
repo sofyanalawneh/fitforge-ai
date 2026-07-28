@@ -56,10 +56,20 @@ class MealGenerateRequest(BaseModel):
     profile: MealProfileInput
 
 
+class Ingredient(BaseModel):
+    name: str
+    quantity: str
+
+
 class MealEntry(BaseModel):
     meal: str
     description: str
     notes: Optional[str] = None
+    ingredients: Optional[List[Ingredient]] = None
+    calories: Optional[int] = None
+    protein_g: Optional[int] = None
+    carbs_g: Optional[int] = None
+    fat_g: Optional[int] = None
 
 
 class MealPlanContent(BaseModel):
