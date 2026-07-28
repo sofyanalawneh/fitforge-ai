@@ -2,6 +2,7 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
+  updateProfile,
 } from "firebase/auth";
 import { auth } from "./firebase";
 
@@ -11,9 +12,14 @@ export class DuplicateEmailError extends Error {
   }
 }
 
-export async function registerWithEmail(email: string, password: string): Promise<void> {
+export async function registerWithEmail(
+  email: string,
+  password: string,
+  fullName: string,
+): Promise<void> {
   try {
-    await createUserWithEmailAndPassword(auth, email, password);
+    const credential = await createUserWithEmailAndPassword(auth, email, password);
+    await updateProfile(credential.user, { displayName: fullName.trim() });
   } catch (err) {
     const code = (err as { code?: string }).code;
     if (code === "auth/email-already-in-use") {

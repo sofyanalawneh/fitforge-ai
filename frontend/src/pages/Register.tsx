@@ -7,6 +7,7 @@ import { IconFlame } from "../components/icons";
 
 export function Register() {
   const navigate = useNavigate();
+  const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -17,7 +18,7 @@ export function Register() {
     setError(null);
     setSubmitting(true);
     try {
-      await registerWithEmail(email, password);
+      await registerWithEmail(email, password, fullName);
       navigate("/dashboard");
     } catch (err) {
       if (err instanceof DuplicateEmailError) {
@@ -39,6 +40,19 @@ export function Register() {
         <h1>Create your account</h1>
         {error && <StatusAlert variant="danger">{error}</StatusAlert>}
         <form onSubmit={handleSubmit}>
+          <div className="mb-3">
+            <label htmlFor="fullName" className="form-label">
+              Full Name
+            </label>
+            <input
+              id="fullName"
+              type="text"
+              className="form-control"
+              required
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+            />
+          </div>
           <div className="mb-3">
             <label htmlFor="email" className="form-label">
               Email
