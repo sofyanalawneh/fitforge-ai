@@ -1,17 +1,16 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { ApiError, apiClient } from "../services/apiClient";
 import type { FitnessProfile, WorkoutPlanContent } from "../types";
 import { LoadingState } from "../components/LoadingState";
 import { StatusAlert } from "../components/StatusAlert";
 import { InfoNotice } from "../components/plan/InfoNotice";
+import { PlanSavedBanner } from "../components/plan/PlanSavedBanner";
 import { PlanStatsBar } from "../components/plan/PlanStatsBar";
 import { SessionSummary } from "../components/plan/SessionSummary";
 import { TipCard } from "../components/plan/TipCard";
 import { WeekdayTabs } from "../components/plan/WeekdayTabs";
 import { WorkoutCard } from "../components/plan/WorkoutCard";
 import {
-  IconArrowRight,
   IconCalendarCheck,
   IconCheckCircle,
   IconDumbbell,
@@ -26,7 +25,6 @@ type Status = "idle" | "loading" | "error" | "profile_incomplete" | "ready" | "s
 const STAT_ICONS = [<IconTarget key="goal" />, <IconDumbbell key="level" />, <IconCalendarCheck key="days" />, <IconLayoutGrid key="sessions" />, <IconCheckCircle key="exercises" />];
 
 export function GenerateWorkout() {
-  const navigate = useNavigate();
   const [status, setStatus] = useState<Status>("idle");
   const [plan, setPlan] = useState<WorkoutPlanContent | null>(null);
   const [profile, setProfile] = useState<FitnessProfile | null>(null);
@@ -110,23 +108,10 @@ export function GenerateWorkout() {
       )}
 
       {status === "saved" && (
-        <>
-          <StatusAlert variant="success">Plan saved to your dashboard.</StatusAlert>
-          <button
-            type="button"
-            className="btn btn-brand btn-lg mb-3 d-inline-flex align-items-center gap-2"
-            onClick={() => navigate("/dashboard")}
-          >
-            Go to Dashboard
-            <IconArrowRight />
-          </button>
-        </>
+        <PlanSavedBanner generateLabel="Generate another workout" onGenerateAnother={generate} />
       )}
 
-      {(status === "idle" ||
-        status === "error" ||
-        status === "profile_incomplete" ||
-        status === "saved") && (
+      {(status === "idle" || status === "error" || status === "profile_incomplete") && (
         <button className="btn btn-brand" onClick={generate}>
           Generate workout plan
         </button>

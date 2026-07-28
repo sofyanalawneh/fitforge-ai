@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { ApiError, apiClient } from "../services/apiClient";
 import type { FitnessProfile, MealPlanContent } from "../types";
 import { LoadingState } from "../components/LoadingState";
@@ -7,10 +6,10 @@ import { StatusAlert } from "../components/StatusAlert";
 import { DailyNutritionSummary } from "../components/plan/DailyNutritionSummary";
 import { InfoNotice } from "../components/plan/InfoNotice";
 import { MealCard } from "../components/plan/MealCard";
+import { PlanSavedBanner } from "../components/plan/PlanSavedBanner";
 import { PlanStatsBar } from "../components/plan/PlanStatsBar";
 import { TipCard } from "../components/plan/TipCard";
 import {
-  IconArrowRight,
   IconCalendarCheck,
   IconDumbbell,
   IconRefresh,
@@ -25,7 +24,6 @@ type Status = "idle" | "loading" | "error" | "profile_incomplete" | "ready" | "s
 const TARGET_ICONS = [<IconTarget key="goal" />, <IconCalendarCheck key="cal" />, <IconDumbbell key="protein" />, <IconSalad key="carbs" />, <IconSalad key="fat" />];
 
 export function GenerateMeal() {
-  const navigate = useNavigate();
   const [status, setStatus] = useState<Status>("idle");
   const [plan, setPlan] = useState<MealPlanContent | null>(null);
   const [profile, setProfile] = useState<FitnessProfile | null>(null);
@@ -107,23 +105,10 @@ export function GenerateMeal() {
       )}
 
       {status === "saved" && (
-        <>
-          <StatusAlert variant="success">Plan saved to your dashboard.</StatusAlert>
-          <button
-            type="button"
-            className="btn btn-brand btn-lg mb-3 d-inline-flex align-items-center gap-2"
-            onClick={() => navigate("/dashboard")}
-          >
-            Go to Dashboard
-            <IconArrowRight />
-          </button>
-        </>
+        <PlanSavedBanner generateLabel="Generate another meal plan" onGenerateAnother={generate} />
       )}
 
-      {(status === "idle" ||
-        status === "error" ||
-        status === "profile_incomplete" ||
-        status === "saved") && (
+      {(status === "idle" || status === "error" || status === "profile_incomplete") && (
         <button className="btn btn-brand" onClick={generate}>
           Generate meal plan
         </button>
