@@ -1,9 +1,10 @@
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 import { AppShell } from "./components/AppShell";
 import { RequireAuth } from "./components/RequireAuth";
 import { Dashboard } from "./pages/Dashboard";
 import { GenerateMeal } from "./pages/GenerateMeal";
 import { GenerateWorkout } from "./pages/GenerateWorkout";
+import { Landing } from "./pages/Landing";
 import { Login } from "./pages/Login";
 import { PlanDetail } from "./pages/PlanDetail";
 import { Profile } from "./pages/Profile";
@@ -55,7 +56,7 @@ export function App() {
             </RequireAuth>
           }
         />
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/" element={<Landing />} />
       </Routes>
     </AppShell>
   );
