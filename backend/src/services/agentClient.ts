@@ -17,6 +17,16 @@ export class AgentUnavailableError extends Error {
   }
 }
 
+// Render's free tier spins agent/backend services down after ~15 min idle; the
+// first request after that has to cold-start the service, which can exceed
+// AGENT_REQUEST_TIMEOUT_MS or bounce off Render's edge with a 502/503 while the
+// container is still booting. A single retry is enough: by the time the retry
+// fires, the earlier attempt has already woken the service, so it responds
+// fast. Only retry signals shaped like a cold start (timeout, 502, 503) — a
+// real 4xx/5xx from a running agent should fail immediately.
+const MAX_ATTEMPTS = 2;
+const COLD_START_STATUSES = new Set([502, 503]);
+
 async function postToAgent<TResponse>(
   url: string | undefined,
   agentName: "workout" | "meal",
@@ -28,31 +38,44 @@ async function postToAgent<TResponse>(
     throw new AgentUnavailableError(agentName, new Error(`no URL configured for ${agentName} agent`));
   }
 
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), AGENT_TIMEOUT_MS);
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), AGENT_TIMEOUT_MS);
 
-  try {
-    log.info("agent.request.start", { agent: agentName, requestId, url });
-    const response = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-      signal: controller.signal,
-    });
+    try {
+      log.info("agent.request.start", { agent: agentName, requestId, url, attempt });
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      });
 
-    if (!response.ok) {
-      throw new Error(`agent responded with status ${response.status}`);
+      if (!response.ok) {
+        if (COLD_START_STATUSES.has(response.status) && attempt < MAX_ATTEMPTS) {
+          log.error("agent.request.cold_start_retry", { agent: agentName, requestId, attempt, status: response.status });
+          continue;
+        }
+        throw new Error(`agent responded with status ${response.status}`);
+      }
+
+      const data = (await response.json()) as TResponse;
+      log.info("agent.request.success", { agent: agentName, requestId, attempt });
+      return data;
+    } catch (err) {
+      const timedOut = err instanceof Error && err.name === "AbortError";
+      if (timedOut && attempt < MAX_ATTEMPTS) {
+        log.error("agent.request.cold_start_retry", { agent: agentName, requestId, attempt, error: "timeout" });
+        continue;
+      }
+      log.error("agent.request.failed", { agent: agentName, requestId, attempt, error: (err as Error).message });
+      throw new AgentUnavailableError(agentName, err);
+    } finally {
+      clearTimeout(timeout);
     }
-
-    const data = (await response.json()) as TResponse;
-    log.info("agent.request.success", { agent: agentName, requestId });
-    return data;
-  } catch (err) {
-    log.error("agent.request.failed", { agent: agentName, requestId, error: (err as Error).message });
-    throw new AgentUnavailableError(agentName, err);
-  } finally {
-    clearTimeout(timeout);
   }
+
+  throw new AgentUnavailableError(agentName, new Error(`${agentName} agent exhausted retries`));
 }
 
 interface WorkoutAgentResponse {
