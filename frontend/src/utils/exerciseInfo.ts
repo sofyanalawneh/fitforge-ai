@@ -300,3 +300,29 @@ export function getExerciseInfo(name?: string | null): ExerciseInfo {
   if (!name) return DEFAULT_INFO;
   return EXERCISE_INFO[name] ?? DEFAULT_INFO;
 }
+
+export interface MuscleGroupSummary {
+  primary: string[];
+  secondary: string[];
+}
+
+/** Ranks the real target muscles trained across a day's own exercises by how
+ * often each one appears — the most-hit muscles are "primary", the rest
+ * (still real, just less frequent) are "secondary". Nothing here is
+ * fabricated: it's a frequency count over getExerciseInfo's own data. */
+export function summarizeMuscleGroups(exerciseNames: Array<string | undefined | null>): MuscleGroupSummary {
+  const counts = new Map<string, number>();
+  for (const name of exerciseNames) {
+    for (const muscle of getExerciseInfo(name).targetMuscles) {
+      counts.set(muscle, (counts.get(muscle) ?? 0) + 1);
+    }
+  }
+
+  const ranked = Array.from(counts.entries()).sort((a, b) => b[1] - a[1]);
+  const maxCount = ranked[0]?.[1] ?? 0;
+
+  return {
+    primary: ranked.filter(([, count]) => count === maxCount).map(([muscle]) => muscle),
+    secondary: ranked.filter(([, count]) => count < maxCount).map(([muscle]) => muscle),
+  };
+}

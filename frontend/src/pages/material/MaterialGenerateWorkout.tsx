@@ -4,6 +4,7 @@ import {
   Alert,
   Box,
   Button,
+  CardMedia,
   Chip,
   Divider,
   List,
@@ -18,8 +19,9 @@ import {
 import FitnessCenterRoundedIcon from "@mui/icons-material/FitnessCenterRounded";
 import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
 import { ApiError, apiClient } from "../../services/apiClient";
-import type { FitnessProfile, WorkoutPlanContent } from "../../types";
+import type { FitnessProfile, Plan, WorkoutPlanContent } from "../../types";
 import { getExerciseInfo } from "../../utils/exerciseInfo";
+import { WORKOUT_PLACEHOLDER, getWorkoutDayImages } from "../../utils/planImages";
 import { computeSessionSummary, computeWorkoutPlanStats } from "../../utils/workoutStats";
 import { DashboardCard } from "../../components/material/DashboardCard";
 import { FeedbackSnackbar } from "../../components/material/FeedbackSnackbar";
@@ -34,6 +36,7 @@ export function MaterialGenerateWorkout() {
   const [plan, setPlan] = useState<WorkoutPlanContent | null>(null);
   const [profile, setProfile] = useState<FitnessProfile | null>(null);
   const [selectedDayIndex, setSelectedDayIndex] = useState(0);
+  const [savedPlanId, setSavedPlanId] = useState<string | null>(null);
   const [snackbar, setSnackbar] = useState<{ message: string; severity: "success" | "error" } | null>(null);
 
   useEffect(() => {
@@ -47,6 +50,7 @@ export function MaterialGenerateWorkout() {
     setStatus("loading");
     setPlan(null);
     setSelectedDayIndex(0);
+    setSavedPlanId(null);
     try {
       const result = await apiClient.post<{ type: "workout"; content: WorkoutPlanContent }>(
         "/api/plans/workout/generate",
@@ -66,7 +70,11 @@ export function MaterialGenerateWorkout() {
   async function save() {
     if (!plan) return;
     try {
-      await apiClient.post("/api/plans", { type: "workout", content: plan });
+      const { plan: savedPlan } = await apiClient.post<{ plan: Plan }>("/api/plans", {
+        type: "workout",
+        content: plan,
+      });
+      setSavedPlanId(savedPlan.planId);
       setStatus("saved");
       setSnackbar({ message: "Workout plan saved to your dashboard.", severity: "success" });
     } catch {
@@ -75,6 +83,7 @@ export function MaterialGenerateWorkout() {
   }
 
   const selectedDay = plan?.weeklySchedule[selectedDayIndex];
+  const dayImages = selectedDay ? getWorkoutDayImages(selectedDay) : [];
   const stats = plan && profile ? computeWorkoutPlanStats(plan, profile) : null;
   const summary = selectedDay && profile ? computeSessionSummary(selectedDay, profile.weightKg, profile.workoutExperience) : null;
 
@@ -176,7 +185,16 @@ export function MaterialGenerateWorkout() {
                   return (
                     <Box key={`${exercise.name}-${index}`}>
                       {index > 0 && <Divider component="li" />}
-                      <ListItem disableGutters sx={{ py: 1.5 }}>
+                      <ListItem disableGutters sx={{ py: 1.5, gap: 1.5 }}>
+                        <CardMedia
+                          component="img"
+                          image={dayImages[index] ?? WORKOUT_PLACEHOLDER}
+                          alt={exercise.name}
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = WORKOUT_PLACEHOLDER;
+                          }}
+                          sx={{ width: 48, height: 48, borderRadius: 1.5, objectFit: "cover", flexShrink: 0 }}
+                        />
                         <ListItemText
                           primary={exercise.name}
                           secondary={
@@ -251,9 +269,16 @@ export function MaterialGenerateWorkout() {
             </Button>
           )}
           {status === "saved" && (
-            <Button variant="outlined" onClick={() => navigate("/dashboard")} sx={{ alignSelf: "flex-start" }}>
-              View Dashboard
-            </Button>
+            <Stack direction="row" spacing={1.5}>
+              {savedPlanId && (
+                <Button variant="contained" onClick={() => navigate(`/plans/${savedPlanId}`)}>
+                  View Details
+                </Button>
+              )}
+              <Button variant="outlined" onClick={() => navigate("/dashboard")}>
+                View Dashboard
+              </Button>
+            </Stack>
           )}
         </Stack>
       )}

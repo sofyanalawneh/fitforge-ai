@@ -20,10 +20,15 @@ export class AgentUnavailableError extends Error {
 // Render's free tier spins agent/backend services down after ~15 min idle; the
 // first request after that has to cold-start the service, which can exceed
 // AGENT_REQUEST_TIMEOUT_MS or bounce off Render's edge with a 502/503 while the
-// container is still booting. A single retry is enough: by the time the retry
-// fires, the earlier attempt has already woken the service, so it responds
-// fast. Only retry signals shaped like a cold start (timeout, 502, 503) — a
-// real 4xx/5xx from a running agent should fail immediately.
+// container is still booting. Locally, the equivalent race is the agent
+// process (no hot-reload) not being listening yet or mid-restart, which
+// surfaces as a connection-level fetch rejection (TypeError) rather than a
+// 502/503 response, since there's no edge proxy in front of it. A single
+// retry is enough for either case: by the time the retry fires, the earlier
+// attempt has already woken/reconnected to the service, so it responds fast.
+// Only retry signals shaped like a transient outage (timeout, connection
+// failure, 502, 503) — a real 4xx/5xx from a running agent should fail
+// immediately.
 const MAX_ATTEMPTS = 2;
 const COLD_START_STATUSES = new Set([502, 503]);
 
@@ -63,9 +68,19 @@ async function postToAgent<TResponse>(
       log.info("agent.request.success", { agent: agentName, requestId, attempt });
       return data;
     } catch (err) {
+      // AbortError (our own timeout) and TypeError (fetch's own connection-level
+      // rejection, e.g. ECONNREFUSED/ECONNRESET) are both transient-outage shapes
+      // worth retrying. The status-based Error thrown above for a non-cold-start
+      // response is a plain Error, so it's excluded and still fails immediately.
       const timedOut = err instanceof Error && err.name === "AbortError";
-      if (timedOut && attempt < MAX_ATTEMPTS) {
-        log.error("agent.request.cold_start_retry", { agent: agentName, requestId, attempt, error: "timeout" });
+      const connectionFailed = err instanceof TypeError;
+      if ((timedOut || connectionFailed) && attempt < MAX_ATTEMPTS) {
+        log.error("agent.request.cold_start_retry", {
+          agent: agentName,
+          requestId,
+          attempt,
+          error: timedOut ? "timeout" : "connection_failed",
+        });
         continue;
       }
       log.error("agent.request.failed", { agent: agentName, requestId, attempt, error: (err as Error).message });

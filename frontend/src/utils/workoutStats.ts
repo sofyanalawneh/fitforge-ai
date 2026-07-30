@@ -75,6 +75,27 @@ export function computeSessionSummary(day: WorkoutDay, weightKg: number, experie
   };
 }
 
+/** Per-day session length in minutes, from the plan's own sets/rest (same
+ * work/rest-per-set model as computeSessionSummary), rounded to the nearest
+ * 5 minutes for a readable range. Independent of body weight/experience —
+ * unlike estCalories/intensity, duration doesn't vary with either. */
+function estimateDayMinutes(day: WorkoutDay): number {
+  const totalSeconds = day.exercises.reduce((sum, exercise) => {
+    const restSeconds = parseAverageSeconds(exercise.rest);
+    return sum + exercise.sets * (WORK_SECONDS_PER_SET + restSeconds);
+  }, 0);
+  return Math.max(5, Math.round(totalSeconds / 60 / 5) * 5);
+}
+
+/** "45-60 min" (or "50 min" if every day comes out the same) across the
+ * plan's real days — used for the workout detail page's Duration stat. */
+export function computeWorkoutDurationRange(plan: WorkoutPlanContent): string {
+  const minutesPerDay = plan.weeklySchedule.map(estimateDayMinutes);
+  const min = Math.min(...minutesPerDay);
+  const max = Math.max(...minutesPerDay);
+  return min === max ? `${min} min` : `${min}-${max} min`;
+}
+
 export interface PlanStatItem {
   label: string;
   value: string;

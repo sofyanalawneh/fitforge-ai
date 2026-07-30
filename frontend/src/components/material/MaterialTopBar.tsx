@@ -1,7 +1,9 @@
-import { AppBar, Avatar, Box, IconButton, Toolbar, Tooltip, Typography } from "@mui/material";
+import { AppBar, Avatar, Box, Button, IconButton, Toolbar, Tooltip, Typography, useMediaQuery, useTheme } from "@mui/material";
+import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 import MenuRoundedIcon from "@mui/icons-material/MenuRounded";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
+import { logout } from "../../services/authService";
 import { MATERIAL_DRAWER_WIDTH } from "./MaterialSidebar";
 
 interface MaterialTopBarProps {
@@ -21,8 +23,16 @@ const PAGE_TITLES: Record<string, string> = {
 export function MaterialTopBar({ onMenuClick }: MaterialTopBarProps) {
   const { user } = useAuth();
   const { pathname } = useLocation();
+  const navigate = useNavigate();
+  const theme = useTheme();
+  const isDesktop = useMediaQuery(theme.breakpoints.up("sm"));
   const initial = user?.displayName?.trim().charAt(0).toUpperCase() || "?";
   const pageTitle = PAGE_TITLES[pathname] ?? "FitForge AI";
+
+  async function handleLogout() {
+    await logout();
+    navigate("/login");
+  }
 
   return (
     <AppBar
@@ -49,11 +59,31 @@ export function MaterialTopBar({ onMenuClick }: MaterialTopBarProps) {
             {pageTitle}
           </Typography>
         </Box>
-        <Tooltip title={user?.email ?? "Account"}>
-          <Avatar sx={{ bgcolor: "primary.main", width: 36, height: 36, fontSize: 14, flexShrink: 0 }}>
-            {initial}
-          </Avatar>
-        </Tooltip>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexShrink: 0 }}>
+          {isDesktop ? (
+            <Button
+              variant="outlined"
+              size="small"
+              color="inherit"
+              startIcon={<LogoutRoundedIcon />}
+              onClick={handleLogout}
+              sx={{ borderColor: "rgba(20, 22, 31, 0.16)" }}
+            >
+              Logout
+            </Button>
+          ) : (
+            <Tooltip title="Logout">
+              <IconButton onClick={handleLogout} aria-label="Logout" size="small">
+                <LogoutRoundedIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
+          <Tooltip title={user?.email ?? "Account"}>
+            <Avatar sx={{ bgcolor: "primary.main", width: 36, height: 36, fontSize: 14, flexShrink: 0 }}>
+              {initial}
+            </Avatar>
+          </Tooltip>
+        </Box>
       </Toolbar>
     </AppBar>
   );

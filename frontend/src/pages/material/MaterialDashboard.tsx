@@ -75,13 +75,33 @@ export function MaterialDashboard() {
 
       <Grid container spacing={2.5} sx={{ mb: 4 }}>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <MetricCard
-            icon={<FitnessCenterRoundedIcon />}
-            accentColor="#3457d5"
-            label="Today's Workout"
-            value={todaysWorkoutLabel}
-            tooltip={todaysWorkoutLabel}
-          />
+          <Box
+            role={mostRecentWorkout ? "button" : undefined}
+            tabIndex={mostRecentWorkout ? 0 : undefined}
+            onClick={mostRecentWorkout ? () => navigate(`/plans/${mostRecentWorkout.planId}`) : undefined}
+            onKeyDown={(e) => {
+              if (mostRecentWorkout && (e.key === "Enter" || e.key === " ")) {
+                e.preventDefault();
+                navigate(`/plans/${mostRecentWorkout.planId}`);
+              }
+            }}
+            sx={{
+              height: "100%",
+              cursor: mostRecentWorkout ? "pointer" : "default",
+              borderRadius: "16px",
+              "&:focus-visible": mostRecentWorkout
+                ? { outline: "2px solid", outlineColor: "primary.main", outlineOffset: 2 }
+                : undefined,
+            }}
+          >
+            <MetricCard
+              icon={<FitnessCenterRoundedIcon />}
+              accentColor="#3457d5"
+              label="Today's Workout"
+              value={todaysWorkoutLabel}
+              tooltip={todaysWorkoutLabel}
+            />
+          </Box>
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <MetricCard
@@ -153,6 +173,15 @@ export function MaterialDashboard() {
             {plans.slice(0, 5).map((plan) => (
               <Box
                 key={plan.planId}
+                role="button"
+                tabIndex={0}
+                onClick={() => navigate(`/plans/${plan.planId}`)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    navigate(`/plans/${plan.planId}`);
+                  }
+                }}
                 sx={{
                   display: "flex",
                   alignItems: "center",
@@ -161,8 +190,10 @@ export function MaterialDashboard() {
                   px: 1,
                   mx: -1,
                   borderRadius: 2,
+                  cursor: "pointer",
                   transition: "background-color 0.12s ease",
                   "&:hover": { bgcolor: "rgba(20,22,31,0.03)" },
+                  "&:focus-visible": { outline: "2px solid", outlineColor: "primary.main", outlineOffset: 2 },
                 }}
               >
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, minWidth: 0 }}>

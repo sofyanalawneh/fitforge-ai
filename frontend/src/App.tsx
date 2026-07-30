@@ -6,6 +6,7 @@ import { RequireAuth } from "./components/RequireAuth";
 import { useDesignMode } from "./contexts/DesignModeContext";
 import { MaterialAppLayout } from "./layouts/MaterialAppLayout";
 import { materialTheme } from "./theme/material/materialTheme";
+import { Account } from "./pages/Account";
 import { Dashboard } from "./pages/Dashboard";
 import { GenerateMeal } from "./pages/GenerateMeal";
 import { GenerateWorkout } from "./pages/GenerateWorkout";
@@ -52,6 +53,14 @@ export function App() {
               element={
                 <RequireAuth>
                   <Profile />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/account"
+              element={
+                <RequireAuth>
+                  <Account />
                 </RequireAuth>
               }
             />

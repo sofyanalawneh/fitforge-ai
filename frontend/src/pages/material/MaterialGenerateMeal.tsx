@@ -14,7 +14,7 @@ import {
 import RestaurantRoundedIcon from "@mui/icons-material/RestaurantRounded";
 import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
 import { ApiError, apiClient } from "../../services/apiClient";
-import type { FitnessProfile, MealPlanContent } from "../../types";
+import type { FitnessProfile, MealPlanContent, Plan } from "../../types";
 import { formatEnumLabel } from "../../utils/format";
 import { computeDailyTargets, computeDailyTotals } from "../../utils/mealStats";
 import { MEAL_PLACEHOLDER, getMealImage } from "../../utils/planImages";
@@ -30,6 +30,7 @@ export function MaterialGenerateMeal() {
   const [status, setStatus] = useState<Status>("idle");
   const [plan, setPlan] = useState<MealPlanContent | null>(null);
   const [profile, setProfile] = useState<FitnessProfile | null>(null);
+  const [savedPlanId, setSavedPlanId] = useState<string | null>(null);
   const [snackbar, setSnackbar] = useState<{ message: string; severity: "success" | "error" } | null>(null);
 
   useEffect(() => {
@@ -42,6 +43,7 @@ export function MaterialGenerateMeal() {
   async function generate() {
     setStatus("loading");
     setPlan(null);
+    setSavedPlanId(null);
     try {
       const result = await apiClient.post<{ type: "meal"; content: MealPlanContent }>(
         "/api/plans/meal/generate",
@@ -61,7 +63,11 @@ export function MaterialGenerateMeal() {
   async function save() {
     if (!plan) return;
     try {
-      await apiClient.post("/api/plans", { type: "meal", content: plan });
+      const { plan: savedPlan } = await apiClient.post<{ plan: Plan }>("/api/plans", {
+        type: "meal",
+        content: plan,
+      });
+      setSavedPlanId(savedPlan.planId);
       setStatus("saved");
       setSnackbar({ message: "Meal plan saved to your dashboard.", severity: "success" });
     } catch {
@@ -237,9 +243,16 @@ export function MaterialGenerateMeal() {
             </Button>
           )}
           {status === "saved" && (
-            <Button variant="outlined" onClick={() => navigate("/dashboard")} sx={{ alignSelf: "flex-start" }}>
-              View Dashboard
-            </Button>
+            <Stack direction="row" spacing={1.5}>
+              {savedPlanId && (
+                <Button variant="contained" onClick={() => navigate(`/plans/${savedPlanId}`)}>
+                  View Details
+                </Button>
+              )}
+              <Button variant="outlined" onClick={() => navigate("/dashboard")}>
+                View Dashboard
+              </Button>
+            </Stack>
           )}
         </Stack>
       )}

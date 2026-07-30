@@ -25,11 +25,14 @@ const MaterialProgress = lazy(() =>
 const MaterialProfile = lazy(() =>
   import("../pages/material/MaterialProfile").then((m) => ({ default: m.MaterialProfile })),
 );
+const MaterialPlanDetail = lazy(() =>
+  import("../pages/material/MaterialPlanDetail").then((m) => ({ default: m.MaterialPlanDetail })),
+);
 
 /** The real Material app shell: responsive AppBar + Drawer, and its own
  * routing tree. Reuses the same URL paths as Classic where they overlap
- * (/dashboard, /generate/workout, /generate/meal, /profile) so the URL
- * stays meaningful regardless of which design is active — only one of
+ * (/dashboard, /generate/workout, /generate/meal, /profile, /plans/:planId)
+ * so the URL stays meaningful regardless of which design is active — only one of
  * Classic's <Routes> or this one is ever mounted per `mode`, so there is no
  * collision. `RequireAuth` is reused as pure auth-gate logic (no Classic
  * styling of its own), same as `useAuth`/`apiClient` elsewhere in this app. */
@@ -63,6 +66,7 @@ export function MaterialAppLayout() {
                 <Route path="/generate/meal" element={<MaterialGenerateMeal />} />
                 <Route path="/progress" element={<MaterialProgress />} />
                 <Route path="/profile" element={<MaterialProfile />} />
+                <Route path="/plans/:planId" element={<MaterialPlanDetail />} />
                 <Route path="*" element={<Navigate to="/dashboard" replace />} />
               </Routes>
             </Suspense>
