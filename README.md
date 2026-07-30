@@ -23,6 +23,12 @@ for operational visibility, not for direct end-user or browser use. Both Render 
 on the free tier, which spins down after ~15 minutes of inactivity; the first request after
 an idle period may take up to a minute while the service cold-starts.
 
+## Demo video
+
+Watch the full FitForge AI project demonstration here:
+
+[Watch the FitForge AI demo video](https://drive.google.com/file/d/1yeIiDatbNIMMnpmUfk7KANlakcxp15yZ/view?usp=sharing)
+
 ## Architecture
 
 Three deployable units, per the project constitution's four-layer architecture
